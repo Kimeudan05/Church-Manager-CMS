@@ -10,10 +10,10 @@ urlpatterns = [
         auth_views.LoginView.as_view(template_name="accounts/login.html"),
         name="login",
     ),
-    path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    path("logout/", views.CustomLogoutView.as_view(), name="logout"),
     path("register/", views.RegistrationView.as_view(), name="register"),
     # profile
-    path("profile", views.ProfileView.as_view(), name="profile"),
+    path("profile/", views.ProfileView.as_view(), name="profile"),
     path("profile/edit", views.ProfileUpdateView.as_view(), name="edit_profile"),
     # Password management
     path(
@@ -29,10 +29,9 @@ urlpatterns = [
         name="password_change_done",
     ),
     # Password reset
-    # Password reset
     path(
         "password-reset/",
-        views.CustomPasswordChangeView.as_view(),
+        views.CustomPasswordResetView.as_view(),
         name="password_reset",
     ),
     path(

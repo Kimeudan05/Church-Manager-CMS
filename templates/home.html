@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+<br />
+{% block title %}Welcome - Church Management System{% endblock %}
+<br />
+{% block content %}
+<div class="jumbotron bg-light p-5 rounded-lg m-3">
+  <h1 class="display-4">
+    <i class="fas fa-church text-primary"></i> Church Management System
+  </h1>
+  <p class="lead">
+    A comprehensive platform to manage your church community, groups, events,
+    and more.
+  </p>
+  <hr class="my-4" />
+
+  {% if user.is_authenticated %}
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card mb-3">
+        <div class="card-body text-center">
+          <i class="fas fa-tachometer-alt fa-3x text-primary mb-3"></i>
+          <h5 class="card-title">Dashboard</h5>
+          <p class="card-text">Go to your personalized dashboard</p>
+          <a href="{% url 'dashboard:member' %}" class="btn btn-primary">
+            Go to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card mb-3">
+        <div class="card-body text-center">
+          <i class="fas fa-user-circle fa-3x text-success mb-3"></i>
+          <h5 class="card-title">Profile</h5>
+          <p class="card-text">View and update your profile</p>
+          <a href="{% url 'accounts:profile' %}" class="btn btn-success">
+            My Profile
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card mb-3">
+        <div class="card-body text-center">
+          <i class="fas fa-sign-out-alt fa-3x text-danger mb-3"></i>
+          <h5 class="card-title">Logout</h5>
+          <p class="card-text">Logout from your account</p>
+          <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
+            Logout
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card mb-3">
+        <div class="card-body text-center">
+          <i class="fas fa-sign-in-alt fa-3x text-primary mb-3"></i>
+          <h5 class="card-title">Login</h5>
+          <p class="card-text">Already have an account? Login here.</p>
+          <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg">
+            <i class="fas fa-sign-in-alt"></i> Login
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card mb-3">
+        <div class="card-body text-center">
+          <i class="fas fa-user-plus fa-3x text-success mb-3"></i>
+          <h5 class="card-title">Register</h5>
+          <p class="card-text">New to our church? Join our community.</p>
+          <a
+            href="{% url 'accounts:register' %}"
+            class="btn btn-success btn-lg"
+          >
+            <i class="fas fa-user-plus"></i> Register
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-info mt-4">
+    <h5><i class="fas fa-info-circle"></i> About This System</h5>
+    <p class="mb-0">
+      Our Church Management System helps you stay connected with your church
+      community. Manage groups, events, announcements, and more in one
+      convenient place.
+    </p>
+  </div>
+  {% endif %}
+</div>
+
+<div class="row mt-4">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h5><i class="fas fa-users"></i> Groups</h5>
+      </div>
+      <div class="card-body">
+        <p>
+          Join or manage church groups like Men's Fellowship, Women's
+          Fellowship, Youth, Sunday School, and more.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header bg-success text-white">
+        <h5><i class="fas fa-calendar-alt"></i> Events</h5>
+      </div>
+      <div class="card-body">
+        <p>
+          Stay updated with upcoming church events, meetings, fellowships, and
+          special services.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header bg-info text-white">
+        <h5><i class="fas fa-book"></i> Sermons</h5>
+      </div>
+      <div class="card-body">
+        <p>
+          Access past sermons, teachings, and church resources anytime,
+          anywhere.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

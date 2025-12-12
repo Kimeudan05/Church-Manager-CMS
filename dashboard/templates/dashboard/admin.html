@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+<br />
+
+{% block title %}Admin Dashboard - Church CMS{% endblock %}
+<br />
+{% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <h1 class="mb-4"><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h1>
+    <p class="lead">Church Management Overview</p>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Statistics Cards -->
+  <div class="col-md-3 mb-4">
+    <div class="card text-white bg-primary">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-title">Total Members</h6>
+            <h2 class="mb-0">{{ total_members }}</h2>
+          </div>
+          <i class="fas fa-users fa-2x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 mb-4">
+    <div class="card text-white bg-success">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-title">Active Members</h6>
+            <h2 class="mb-0">{{ active_members }}</h2>
+          </div>
+          <i class="fas fa-user-check fa-2x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 mb-4">
+    <div class="card text-white bg-warning">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-title">Visitors</h6>
+            <h2 class="mb-0">{{ visitors }}</h2>
+          </div>
+          <i class="fas fa-user-plus fa-2x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3 mb-4">
+    <div class="card text-white bg-info">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-title">Total Groups</h6>
+            <h2 class="mb-0">{{ total_groups }}</h2>
+          </div>
+          <i class="fas fa-layer-group fa-2x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Recent Members -->
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="fas fa-user-plus"></i> Recent Members</h5>
+          <a
+            href="{% url 'admin:accounts_customuser_changelist' %}"
+            class="btn btn-light btn-sm"
+          >
+            <i class="fas fa-external-link-alt"></i> View All
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if recent_members %}
+        <div class="list-group">
+          {% for member in recent_members %}
+          <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1">{{ member.get_full_name }}</h6>
+              <small class="text-muted"
+                >{{ member.date_joined|timesince }} ago</small
+              >
+            </div>
+            <p class="mb-1 small text-muted">
+              <i class="fas fa-envelope"></i> {{ member.email|default:"No email"
+              }}
+            </p>
+            <span
+              class="badge bg-{{ member.status == 'active'|yesno:'success,warning' }}"
+            >
+              {{ member.get_status_display }}
+            </span>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No recent members.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Upcoming Events -->
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header bg-success text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="fas fa-calendar-alt"></i> Upcoming Events
+          </h5>
+          <a href="#" class="btn btn-light btn-sm">
+            <i class="fas fa-external-link-alt"></i> View All
+          </a>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if upcoming_events %}
+        <div class="list-group">
+          {% for event in upcoming_events %}
+          <div class="list-group-item">
+            <div class="d-flex w-100 justify-content-between">
+              <h6 class="mb-1">{{ event.title }}</h6>
+              <small>{{ event.start_datetime|date:"M d" }}</small>
+            </div>
+            <p class="mb-1 small">{{ event.description|truncatechars:80 }}</p>
+            <small class="text-muted">
+              <i class="fas fa-map-marker-alt"></i> {{ event.location }}
+            </small>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">No upcoming events.</p>
+        <a href="#" class="btn btn-outline-success btn-sm">
+          <i class="fas fa-plus"></i> Create Event
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <!-- Admin Quick Links -->
+  <div class="col-md-12">
+    <div class="card shadow">
+      <div class="card-header bg-dark text-white">
+        <h5 class="mb-0"><i class="fas fa-cogs"></i> Admin Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-2 mb-2">
+            <a
+              href="{% url 'admin:index' %}"
+              class="btn btn-outline-primary btn-block"
+            >
+              <i class="fas fa-cog"></i> Admin Panel
+            </a>
+          </div>
+          <div class="col-md-2 mb-2">
+            <a
+              href="{% url 'admin:accounts_customuser_add' %}"
+              class="btn btn-outline-success btn-block"
+            >
+              <i class="fas fa-user-plus"></i> Add Member
+            </a>
+          </div>
+          <div class="col-md-2 mb-2">
+            <a
+              href="{% url 'admin:groups_churchgroup_add' %}"
+              class="btn btn-outline-info btn-block"
+            >
+              <i class="fas fa-layer-group"></i> Add Group
+            </a>
+          </div>
+          <div class="col-md-2 mb-2">
+            <a href="#" class="btn btn-outline-warning btn-block">
+              <i class="fas fa-calendar-plus"></i> Create Event
+            </a>
+          </div>
+          <div class="col-md-2 mb-2">
+            <a href="#" class="btn btn-outline-secondary btn-block">
+              <i class="fas fa-bullhorn"></i> Send Announcement
+            </a>
+          </div>
+          <div class="col-md-2 mb-2">
+            <a
+              href="{% url 'accounts:logout' %}"
+              class="btn btn-outline-danger btn-block"
+            >
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

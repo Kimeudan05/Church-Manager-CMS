@@ -15,13 +15,13 @@ urlpatterns = [
     path("", TemplateView.as_view(template_name="home.html"), name="home"),
     # App URLs
     path("accounts/", include("accounts.urls")),
-    # path('groups/', include('groups.urls')),
+    path("groups/", include("groups.urls")),
     # path('events/', include('events.urls')),
     # path('announcements/', include('announcements.urls')),
     # path('sermons/', include('sermons.urls')),
     # path('curriculum/', include('curriculum.urls')),
     # path('projects/', include('projects.urls')),
-    # path('dashboard/', include('dashboard.urls')),
+    path("dashboard/", include("dashboard.urls")),
     # Third-party
     # path("api-auth/", include("rest_framework.urls")),
 ]

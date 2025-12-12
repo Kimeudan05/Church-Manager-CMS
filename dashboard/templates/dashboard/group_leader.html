@@ -1,0 +1,182 @@
+{% extends 'base.html' %} <br />
+{% block title %}Group Leader Dashboard - Church CMS{% endblock %}
+<br />
+
+{% block content %}
+<div class="row">
+  <div class="col-md-12">
+    <h1 class="mb-4">
+      <i class="fas fa-tachometer-alt"></i> Group Leader Dashboard
+    </h1>
+    <p class="lead">Welcome, {{ user.get_full_name|default:user.username }}!</p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-4 mb-4">
+    <div class="card text-white bg-primary">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-title">Groups I Lead</h6>
+            <h2 class="mb-0">{{ my_groups.count }}</h2>
+          </div>
+          <i class="fas fa-user-tie fa-2x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-4">
+    <div class="card text-white bg-success">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-title">Total Members</h6>
+            <h2 class="mb-0">{{ total_group_members|default:0 }}</h2>
+          </div>
+          <i class="fas fa-users fa-2x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4 mb-4">
+    <div class="card text-white bg-info">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="card-title">Average per Group</h6>
+            <h2 class="mb-0">
+              {% if my_groups.count > 0 %} {{
+              total_group_members|default:0|divisibleby:my_groups.count|default:0
+              }} {% else %}0{% endif %}
+            </h2>
+          </div>
+          <i class="fas fa-chart-bar fa-2x"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- My Groups -->
+  <div class="col-md-12">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="fas fa-user-tie"></i> My Groups</h5>
+      </div>
+      <div class="card-body">
+        {% if my_groups %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Group Name</th>
+                <th>Type</th>
+                <th>Members</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for group in my_groups %}
+              <tr>
+                <td>
+                  <strong>{{ group.name }}</strong>
+                </td>
+                <td>
+                  <span class="badge bg-info"
+                    >{{ group.get_group_type_display }}</span
+                  >
+                </td>
+                <td>
+                  <span class="badge bg-secondary"
+                    >{{ group.group_members.count }}</span
+                  >
+                </td>
+                <td>
+                  <small class="text-muted"
+                    >{{ group.description|truncatechars:50 }}</small
+                  >
+                </td>
+                <td>
+                  <a
+                    href="{% url 'groups:detail' group.id %}"
+                    class="btn btn-sm btn-outline-primary"
+                  >
+                    <i class="fas fa-eye"></i> View
+                  </a>
+                  <a
+                    href="{% url 'groups:members' group.id %}"
+                    class="btn btn-sm btn-outline-success"
+                  >
+                    <i class="fas fa-users"></i> Members
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle"></i> You are not a leader of any group.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <!-- Quick Actions -->
+  <div class="col-md-12">
+    <div class="card shadow">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0"><i class="fas fa-bolt"></i> Group Leader Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3 mb-2">
+            <a
+              href="{% url 'groups:list' %}"
+              class="btn btn-outline-primary btn-block"
+            >
+              <i class="fas fa-search"></i> Browse All Groups
+            </a>
+          </div>
+          <div class="col-md-3 mb-2">
+            {% if my_groups.first %}
+            <a
+              href="{% url 'groups:members' my_groups.first.id %}"
+              class="btn btn-outline-success btn-block"
+            >
+              <i class="fas fa-users"></i> Manage Members
+            </a>
+            {% else %}
+            <button class="btn btn-outline-secondary btn-block" disabled>
+              <i class="fas fa-users"></i> Manage Members
+            </button>
+            {% endif %}
+          </div>
+          <div class="col-md-3 mb-2">
+            <a href="#" class="btn btn-outline-info btn-block">
+              <i class="fas fa-calendar-plus"></i> Schedule Event
+            </a>
+          </div>
+          <div class="col-md-3 mb-2">
+            <a
+              href="{% url 'accounts:logout' %}"
+              class="btn btn-outline-danger btn-block"
+            >
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

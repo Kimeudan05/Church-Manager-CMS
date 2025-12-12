@@ -44,9 +44,18 @@
                         <li><a href="" class="dropdown-item">Admin Dashboard</a></li>
                         <li>
                             <hr class="dropdown-divider">
+                      </li>
+                        {% endif %}
+
+                        <li>
+                        <form method="post" action="{% url 'accounts:logout' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="dropdown-item" style="border:none; background:none; padding:0; cursor:pointer;">
+                            Logout
+                            </button>
+                        </form>
                         </li>
-                          {% endif %}
-                           <li><a class="dropdown-item" href="{% url 'accounts:logout' %}">Logout</a></li>
+
 
                     </ul>
                   

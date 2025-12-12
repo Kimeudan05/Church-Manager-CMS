@@ -89,9 +89,28 @@ class CustomPasswordChangeView(
     )
 
 
+class CustomPasswordResetView(SuccessMessageMixin, PasswordResetView):
+    """Custom Password reset view"""
+
+    template_name = "accounts/password_reset.html"
+    email_template_name = "accounts/password_reset_email.html"
+    success_url = reverse_lazy("accounts:password_reset_done")
+    success_message = (
+        "Password reset email has been send if the email exists in our system."
+    )
+
+
 class CustomPasswordResetConfirmView(SuccessMessageMixin, PasswordResetConfirmView):
     """Custom Password reset confirm view"""
 
     template_name = "accounts/password_reset_confirm.html"
     success_url = reverse_lazy("accounts:login")
     success_message = "Your password has been reset successfully. You can now login with your new password."
+
+
+class CustomLogoutView(SuccessMessageMixin, LogoutView):
+    """Custom logout view with success message"""
+
+    def get_next_page(self):
+        messages.success(self.request, "You have been logged out successfully.")
+        return super().get_next_page()
