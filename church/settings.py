@@ -2,24 +2,33 @@
 Django settings for church project.
 """
 
-from email.policy import default
 from pathlib import Path
-import os
 from decouple import config
 
+# certificates
+import ssl
+import certifi
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+ssl._create_default_https_context = ssl.create_default_context(cafile=certifi.where())
+
+
+# --------------------------------------------------
+# Base Directory
+# --------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config("SECRET_KEY", default="secret")
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# --------------------------------------------------
+# Security
+# --------------------------------------------------
+SECRET_KEY = config("SECRET_KEY")
+
+DEBUG = config("DEBUG", cast=bool, default=False)
 
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 
-# Application definition
-
+# --------------------------------------------------
+# Application Definition
+# --------------------------------------------------
 INSTALLED_APPS = [
     # Django apps
     "django.contrib.admin",
@@ -29,7 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
-    # Third party apps
+    # Third-party apps
     "crispy_forms",
     "crispy_bootstrap5",
     "django_filters",
@@ -45,6 +54,9 @@ INSTALLED_APPS = [
     "dashboard.apps.DashboardConfig",
 ]
 
+# --------------------------------------------------
+# Middleware
+# --------------------------------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -55,8 +67,16 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+# --------------------------------------------------
+# URLs / WSGI
+# --------------------------------------------------
 ROOT_URLCONF = "church.urls"
 
+WSGI_APPLICATION = "church.wsgi.application"
+
+# --------------------------------------------------
+# Templates
+# --------------------------------------------------
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -74,12 +94,9 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "church.wsgi.application"
-
-
-# Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-
+# --------------------------------------------------
+# Database (SQLite – dev default)
+# --------------------------------------------------
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -87,10 +104,9 @@ DATABASES = {
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
-
+# --------------------------------------------------
+# Password Validation
+# --------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -106,52 +122,83 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+# --------------------------------------------------
 # Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
-
+# --------------------------------------------------
 LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "Africa/Nairobi"
 
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
-
-STATIC_URL = "static/"
+# --------------------------------------------------
+# Static Files
+# --------------------------------------------------
+STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Media files
+# --------------------------------------------------
+# Media Files
+# --------------------------------------------------
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
-# Default primary key field type
+# --------------------------------------------------
+# Default Primary Key
+# --------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# crispy forms
+# --------------------------------------------------
+# Crispy Forms
+# --------------------------------------------------
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-# Login / Logout URLs
+# --------------------------------------------------
+# Authentication
+# --------------------------------------------------
+AUTH_USER_MODEL = "accounts.CustomUser"
+
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 
-# Email configuration (for production)
+# --------------------------------------------------
+# Email Configuration (Gmail SMTP)
+# --------------------------------------------------
+# Email backend
 EMAIL_BACKEND = config(
-    "EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend"
+    "EMAIL_BACKEND", default="django.core.mail.backends.smtp.EmailBackend"
 )
-EMAIL_HOST = config("EMAIL_HOST", default="")
-EMAIL_PORT = config("EMAIL_PORT", cast=int, default=587)
-EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool, default=True)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 
+# Default "from" email
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="savvysolvetech@gmail.com")
+
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT", cast=int)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", cast=bool)
+
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+
+# --------------------------------------------------
+# Logging
+# --------------------------------------------------
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
+}
 
 # Avoid circular imports
 AUTH_USER_MODEL = "accounts.CustomUser"

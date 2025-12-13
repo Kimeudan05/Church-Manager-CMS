@@ -127,8 +127,11 @@
 
               <dt class="col-sm-4">Marital Status:</dt>
               <dd class="col-sm-8">
-                {% if user.marital_status %} {{ user.get_marital_status_display
-                }} {% else %} Not provided {% endif %}
+                {% if user.marital_status %}
+                <!---->
+                {{ user.get_marital_status_display }}
+                <!---->
+                {% else %} Not provided {% endif %}
               </dd>
 
               {% if user.spouse %}
