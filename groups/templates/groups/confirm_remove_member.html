@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Remove Member - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-minus"></i> Remove Member from Group
+                </h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-user-times fa-5x text-danger"></i>
+                </div>
+                
+                <h4 class="text-danger">Remove {{ member.get_full_name }}?</h4>
+                <p class="lead">Are you sure you want to remove this member from {{ group.name }}?</p>
+                
+                <div class="card mb-4">
+                    <div class="card-body text-start">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Member:</strong> {{ member.get_full_name }}</p>
+                                <p><strong>Email:</strong> {{ member.email|default:"Not provided" }}</p>
+                                <p><strong>Phone:</strong> {{ member.phone|default:"Not provided" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Group:</strong> {{ group.name }}</p>
+                                <p><strong>Role:</strong> {{ object.role|default:"Member" }}</p>
+                                <p><strong>Primary Group:</strong> 
+                                    {% if object.is_primary %}
+                                    <span class="badge bg-danger">YES - Important!</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if object.is_primary %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This is the member's primary group. Removing them will leave them without a primary group.
+                </div>
+                {% endif %}
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    This action will only remove the member from this group. Their account will remain active.
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-user-minus"></i> Yes, Remove Member
+                        </button>
+                        <a href="{% url 'groups:members' group.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

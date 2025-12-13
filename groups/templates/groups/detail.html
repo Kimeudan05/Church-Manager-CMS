@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+<!---->
+{% block title %}{{ group.name }} - Church CMS{% endblock %}
+<!---->
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow mb-4">
+      <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h3 class="mb-0"><i class="fas fa-users"></i> {{ group.name }}</h3>
+          <span class="badge bg-light text-dark">
+            {{ group.get_group_type_display }}
+          </span>
+        </div>
+      </div>
+      <div class="card-body">
+        {% if group.description %}
+        <div class="mb-4">
+          <h5>Description</h5>
+          <p class="lead">{{ group.description|linebreaks }}</p>
+        </div>
+        {% endif %}
+
+        <div class="row">
+          <div class="col-md-6">
+            <h5><i class="fas fa-info-circle"></i> Group Information</h5>
+            <dl class="row">
+              <dt class="col-sm-4">Created:</dt>
+              <dd class="col-sm-8">{{ group.created_at|date:"F d, Y" }}</dd>
+
+              <dt class="col-sm-4">Last Updated:</dt>
+              <dd class="col-sm-8">{{ group.updated_at|date:"F d, Y" }}</dd>
+
+              <dt class="col-sm-4">Total Members:</dt>
+              <dd class="col-sm-8">
+                <span class="badge bg-primary">{{ members|length }}</span>
+              </dd>
+            </dl>
+          </div>
+
+          <div class="col-md-6">
+            <h5><i class="fas fa-user-tie"></i> Group Leaders</h5>
+            {% if leaders %}
+            <div class="list-group">
+              {% for leader in leaders %}
+              <a href="#" class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between">
+                  <h6 class="mb-1">{{ leader.get_full_name }}</h6>
+                  <small>{{ leader.status|title }}</small>
+                </div>
+                <p class="mb-1 small text-muted">
+                  <i class="fas fa-envelope"></i>
+                  {{ leader.email|default:"No email" }}
+                  <!---->
+                </p>
+              </a>
+              {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted">No leaders assigned to this group.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="d-flex justify-content-between">
+          <a href="{% url 'groups:members' group.id %}" class="btn btn-success">
+            <i class="fas fa-users"></i> View Members ({{ members|length }})
+          </a>
+
+          {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' or user_is_leader %}
+          <div class="btn-group">
+            <a
+              href="{% url 'groups:members' group.id %}"
+              class="btn btn-outline-primary"
+            >
+              <i class="fas fa-user-plus"></i> Manage Members
+            </a>
+            <!---->
+          {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' %}
+
+            <a
+              href="{% url 'groups:update' group.id %}"
+              class="btn btn-outline-warning"
+            >
+              <i class="fas fa-edit"></i> Edit Group
+            </a>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity (Placeholder) -->
+    <div class="card shadow">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">
+          <i class="fas fa-info-circle"></i>
+          Activity tracking will be available soon.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+      </div>
+      <div class="card-body">
+        <div class="d-grid gap-2">
+          <a
+            href="{% url 'groups:members' group.id %}"
+            class="btn btn-outline-primary"
+          >
+            <i class="fas fa-users"></i> View All Members
+          </a>
+
+          {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' or user_is_leader %}
+          <a
+            href="{% url 'groups:add_member' group.id %}"
+            class="btn btn-outline-success"
+          >
+            <i class="fas fa-user-plus"></i> Add New Member
+          </a>
+          {% endif %}
+          <!---->
+          {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' %}
+          <a
+            href="{% url 'groups:assign_leaders' group.id %}"
+            class="btn btn-outline-warning"
+          >
+            <i class="fas fa-user-tie"></i> Manage Leaders
+          </a>
+          <a href="#" class="btn btn-outline-info">
+            <i class="fas fa-calendar-plus"></i> Schedule Event
+          </a>
+          {% endif %}
+
+          <a href="{% url 'groups:list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Groups
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Group Statistics -->
+    <div class="card shadow">
+      <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Group Stats</h5>
+      </div>
+      <div class="card-body">
+        <div class="text-center mb-3">
+          <div class="display-4">{{ members|length }}</div>
+          <p class="text-muted">Total Members</p>
+        </div>
+
+        <div class="progress mb-3" style="height: 20px">
+          <div class="progress-bar bg-success" style="width: 60%">
+            60% Active
+          </div>
+          <div class="progress-bar bg-warning" style="width: 25%">
+            25% Visitors
+          </div>
+          <div class="progress-bar bg-secondary" style="width: 15%">
+            15% Inactive
+          </div>
+        </div>
+
+        <dl class="row mb-0">
+          <dt class="col-sm-6">Primary Members:</dt>
+          <dd class="col-sm-6">
+            {% with primary_count=members|length|default:0 %}
+            <!---->
+            {{ primary_count }} {% endwith %}
+          </dd>
+
+          <dt class="col-sm-6">Average Age:</dt>
+          <dd class="col-sm-6">--</dd>
+
+          <dt class="col-sm-6">Male/Female Ratio:</dt>
+          <dd class="col-sm-6">--</dd>
+        </dl>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

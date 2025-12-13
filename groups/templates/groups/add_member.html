@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Add Member to {{ group.name }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-plus"></i> {{ title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-info-circle"></i> Important Notes</h5>
+                    <ul class="mb-0">
+                        <li>Members can belong to a maximum of 3 groups</li>
+                        <li>A member can have only one primary group</li>
+                        <li>Check if the member is already in this group</li>
+                    </ul>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {{ form|crispy }}
+                    
+                    <div class="mt-4">
+                        <h5>Member Information</h5>
+                        <div id="member-info" class="alert alert-light">
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-info-circle"></i> 
+                                Select a member to view their current group information.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-user-plus"></i> Add to Group
+                        </button>
+                        <a href="{% url 'groups:members' group.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const memberSelect = document.querySelector('#id_member');
+    const memberInfo = document.querySelector('#member-info');
+    
+    if (memberSelect) {
+        memberSelect.addEventListener('change', function() {
+            const memberId = this.value;
+            if (memberId) {
+                // Fetch member information via AJAX
+                fetch(`/groups/api/check-member-groups/?member_id=${memberId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            memberInfo.innerHTML = `
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> ${data.error}
+                                </div>
+                            `;
+                        } else {
+                            const canJoinMore = data.can_join_more ? 
+                                '<span class="badge bg-success">Can Join</span>' : 
+                                '<span class="badge bg-danger">Cannot Join (Max 3 groups)</span>';
+                            
+                            memberInfo.innerHTML = `
+                                <h6>${data.member_name}</h6>
+                                <p><strong>Current Groups:</strong> ${data.group_count} / 3 ${canJoinMore}</p>
+                                <p class="small text-muted">If this is their first group, you can mark it as primary.</p>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        memberInfo.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i> Error loading member information
+                            </div>
+                        `;
+                    });
+            } else {
+                memberInfo.innerHTML = `
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-info-circle"></i> 
+                        Select a member to view their current group information.
+                    </p>
+                `;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

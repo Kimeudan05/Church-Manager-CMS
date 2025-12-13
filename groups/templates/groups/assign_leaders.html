@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-tie"></i> {{ title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-info-circle"></i> Group Leaders Rules</h5>
+                    <ul class="mb-0">
+                        <li>Each group can have a maximum of <strong>3 leaders</strong></li>
+                        <li>Leaders must be active church members</li>
+                        <li>Leaders can manage group members and events</li>
+                        <li>Current leaders are pre-selected below</li>
+                    </ul>
+                </div>
+                
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5>Group Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Group:</strong> {{ group.name }}</p>
+                                <p><strong>Type:</strong> {{ group.get_group_type_display }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Current Leaders:</strong> {{ group.leaders.count }}</p>
+                                <p><strong>Total Members:</strong> {{ group.group_members.count }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {{ form|crispy }}
+                    
+                    <div class="mt-4">
+                        <h5>Current Leaders</h5>
+                        {% if group.leaders.all %}
+                        <div class="row">
+                            {% for leader in group.leaders.all %}
+                            <div class="col-md-4 mb-3">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h6>{{ leader.get_full_name }}</h6>
+                                        <p class="small text-muted mb-1">
+                                            <i class="fas fa-envelope"></i> {{ leader.email|default:"No email" }}
+                                        </p>
+                                        <p class="small text-muted mb-0">
+                                            <i class="fas fa-phone"></i> {{ leader.phone|default:"No phone" }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No leaders currently assigned to this group.</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save"></i> Update Leaders
+                        </button>
+                        <a href="{% url 'groups:detail' group.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

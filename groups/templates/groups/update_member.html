@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-edit"></i> {{ title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5>Current Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Member:</strong> {{ object.member.get_full_name }}</p>
+                                <p><strong>Group:</strong> {{ object.group.name }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Role:</strong> {{ object.role|default:"Not specified" }}</p>
+                                <p><strong>Primary Group:</strong> 
+                                    {% if object.is_primary %}
+                                    <span class="badge bg-success">Yes</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">No</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {{ form|crispy }}
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> Setting this as primary will automatically remove the primary status from any other groups this member belongs to.
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save"></i> Update Membership
+                        </button>
+                        <a href="{% url 'groups:members' group.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -84,7 +84,10 @@
         {% if user_groups %}
         <div class="list-group">
           {% for group in user_groups %}
-          <a href="#" class="list-group-item list-group-item-action">
+          <a
+            href="{% url 'groups:my_groups' %}"
+            class="list-group-item list-group-item-action"
+          >
             <div class="d-flex w-100 justify-content-between">
               <h6 class="mb-1">{{ group.name }}</h6>
               <small>{{ group.get_group_type_display }}</small>
@@ -97,7 +100,10 @@
         </div>
         {% else %}
         <p class="text-muted">You are not a member of any group yet.</p>
-        <a href="#" class="btn btn-outline-primary btn-sm">
+        <a
+          href="{% url 'groups:my_groups' %}"
+          class="btn btn-outline-primary btn-sm"
+        >
           <i class="fas fa-search"></i> Browse Groups
         </a>
         {% endif %}
@@ -155,7 +161,10 @@
             </a>
           </div>
           <div class="col-md-3 mb-2">
-            <a href="#" class="btn btn-outline-success btn-block">
+            <a
+              href="{% url 'groups:list' %}"
+              class="btn btn-outline-success btn-block"
+            >
               <i class="fas fa-users"></i> Browse Groups
             </a>
           </div>

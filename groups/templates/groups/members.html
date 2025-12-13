@@ -1,0 +1,154 @@
+{% extends 'base.html' %} 
+{% load crispy_forms_tags %}
+<!---->
+{% block title %}Members of {{ group.name }} - Church CMS{% endblock %} 
+<!---->
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h1><i class="fas fa-users"></i> {{ group.name }} - Members</h1>
+
+  <div class="btn-group">
+    <a
+      href="{% url 'groups:detail' group.id %}"
+      class="btn btn-outline-primary"
+    >
+      <i class="fas fa-arrow-left"></i> Back to Group
+    </a>
+
+    {% if can_manage_members %}
+    <a href="{% url 'groups:add_member' group.id %}" class="btn btn-success">
+      <i class="fas fa-user-plus"></i> Add Member
+    </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Members Table -->
+<div class="card shadow">
+  <div class="card-header bg-primary text-white">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="fas fa-list"></i> Members List ({{ memberships|length }})
+      </h5>
+      <span class="badge bg-light text-dark">
+        {{ group.get_group_type_display }}
+      </span>
+    </div>
+  </div>
+
+  <div class="card-body">
+    {% if memberships %}
+    <div class="table-responsive">
+      <table class="table table-hover">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Status</th>
+            <th>Role in Group</th>
+            <th>Primary Group</th>
+            <th>Date Joined</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for membership in memberships %}
+          <tr>
+            <td>
+              <strong>{{ membership.member.get_full_name }}</strong>
+              <br />
+              <small class="text-muted">
+                <i class="fas fa-envelope"></i> {{membership.member.email|default:"No email" }}
+              </small>
+            </td>
+            <td>
+              <span
+                class="badge bg-{{ membership.member.status|yesno:'success,warning,secondary' }}"
+              >
+                {{ membership.member.get_status_display }}
+              </span>
+            </td>
+            <td>
+              {% if membership.role %}
+              <span class="badge bg-info">{{ membership.role }}</span>
+              {% else %}
+              <span class="text-muted">Member</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if membership.is_primary %}
+              <span class="badge bg-success">Yes</span>
+              {% else %}
+              <span class="badge bg-secondary">No</span>
+              {% endif %}
+            </td>
+            <td>{{ membership.date_joined|date:"M d, Y" }}</td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a href="#" class="btn btn-outline-primary">
+                  <i class="fas fa-eye"></i>
+                </a>
+
+                {% if can_manage_members %}
+                <a
+                  href="{% url 'groups:update_member' membership.id %}"
+                  class="btn btn-outline-warning"
+                >
+                  <i class="fas fa-edit"></i>
+                </a>
+                <a
+                  href="{% url 'groups:remove_member' membership.id %}"
+                  class="btn btn-outline-danger"
+                >
+                  <i class="fas fa-trash"></i>
+                </a>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+      <i class="fas fa-info-circle"></i> No members in this group yet.
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card-footer">
+    <div class="d-flex justify-content-between">
+      <div><strong>Total Members:</strong> {{ memberships|length }}</div>
+      <div>
+        <strong>Primary Members:</strong>
+        {{ memberships|length|default:0 }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Member Form (if permissions) -->
+{% if can_manage_members and add_member_form %}
+<div class="card shadow mt-4">
+  <div class="card-header bg-success text-white">
+    <h5 class="mb-0"><i class="fas fa-user-plus"></i> Quick Add Member</h5>
+  </div>
+  <div class="card-body">
+    <form method="post" action="{% url 'groups:add_member' group.id %}">
+      {% csrf_token %}
+      <div class="row">
+        <div class="col-md-4">{{ add_member_form.member|as_crispy_field }}</div>
+        <div class="col-md-3">{{ add_member_form.role|as_crispy_field }}</div>
+        <div class="col-md-3">
+          {{ add_member_form.is_primary|as_crispy_field }}
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="submit" class="btn btn-success w-100">
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %} {% endblock %}

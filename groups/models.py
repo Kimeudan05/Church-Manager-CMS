@@ -83,8 +83,8 @@ class UserRole(models.Model):
     can_manage_finances = models.BooleanField(default=False)
     can_send_announcements = models.BooleanField(default=False)
 
-    valid_from = models.DateField(auto_now_add=True)
-    valid_to = models.DateField(auto_now=True)
+    valid_from = models.DateField(null=True, blank=True)
+    valid_to = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.get_full_name()} - {self.get_role_type_display()}"

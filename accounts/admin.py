@@ -92,17 +92,4 @@ class CustomUserAdmin(UserAdmin):
     )
 
 
-class UserRoleAdmin(admin.ModelAdmin):
-    list_display = ["user", "role_type", "valid_from", "valid_to"]
-    list_filter = ("role_type", "can_manage_members", "can_manage_events")
-    filter_horizontal = ("assigned_groups", "permissions_granted")
-    search_fields = (
-        "user__username",
-        "user__email",
-        "user__first_name",
-        "user__last_name",
-    )
-
-
 admin.site.register(CustomUser, CustomUserAdmin)
-admin.site.register(UserRole, UserRoleAdmin)

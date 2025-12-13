@@ -1,0 +1,26 @@
+{% extends 'base.html' %} {% load crispy_forms_tags %} {% block title %}{{ title
+}} - Church CMS{% endblock %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0"><i class="fas fa-users"></i> {{ title }}</h4>
+      </div>
+      <div class="card-body">
+        <form method="post" novalidate>
+          {% csrf_token %} {{ form|crispy }}
+
+          <div class="d-grid gap-2 mt-4">
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-save"></i> {{ submit_text }}
+            </button>
+            <a href="{% url 'groups:list' %}" class="btn btn-outline-secondary">
+              <i class="fas fa-times"></i> Cancel
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
