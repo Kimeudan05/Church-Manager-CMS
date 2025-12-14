@@ -1,6 +1,75 @@
-<footer>
-  <h2>Footer</h2>
-  <p>
-    Lorem ipsum dolor sit amet, consectetur adipisicing elit. Illum, reiciendis.
-  </p>
+<footer class="bg-primary text-light mt-5 pt-4 pb-3">
+    <div class="container">
+        <div class="row">
+
+            <!-- Church Info -->
+            <div class="col-md-4 mb-3">
+                <h5 class="text-uppercase">
+                    <i class="fas fa-church me-2"></i>Church CMS
+                </h5>
+                <p class="small">
+                    A simple and effective church management system for events,
+                    groups, and member engagement.
+                </p>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="col-md-4 mb-3">
+                <h6 class="text-uppercase">Quick Links</h6>
+                <ul class="list-unstyled">
+                    <li>
+                        <a href="{% url 'home' %}" class="text-light text-decoration-none">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'events:list' %}" class="text-light text-decoration-none">
+                            <i class="fas fa-calendar-alt me-1"></i> Events
+                        </a>
+                    </li>
+                    {% if user.is_authenticated %}
+                    <li>
+                        <a href="{% url 'accounts:profile' %}" class="text-light text-decoration-none">
+                            <i class="fas fa-user me-1"></i> My Profile
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+
+            <!-- Contact / Social -->
+            <div class="col-md-4 mb-3">
+                <h6 class="text-uppercase">Connect With Us</h6>
+                <p class="small mb-2">
+                    <i class="fas fa-map-marker-alt me-2"></i>Ruiru, Kenya
+                </p>
+                <p class="small mb-2">
+                    <i class="fas fa-envelope me-2"></i>info@churchcms.com
+                </p>
+
+                <div class="mt-2">
+                    <a href="#" class="text-light me-3">
+                        <i class="fab fa-facebook fa-lg"></i>
+                    </a>
+                    <a href="#" class="text-light me-3">
+                        <i class="fab fa-twitter fa-lg"></i>
+                    </a>
+                    <a href="#" class="text-light me-3">
+                        <i class="fab fa-instagram fa-lg"></i>
+                    </a>
+                    <a href="#" class="text-light">
+                        <i class="fab fa-youtube fa-lg"></i>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+
+        <hr class="border-light">
+
+        <!-- Bottom Bar -->
+        <div class="text-center small">
+            &copy; {{ now|date:"Y" }} Church CMS. All rights reserved.
+        </div>
+    </div>
 </footer>

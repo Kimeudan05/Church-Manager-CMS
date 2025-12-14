@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Register for {{ event.title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-plus"></i> Register for Event
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5>{{ event.title }}</h5>
+                        <p class="mb-1"><strong>Date:</strong> {{ event.start_datetime|date:"l, F d, Y" }}</p>
+                        <p class="mb-1"><strong>Time:</strong> {{ event.start_datetime|time:"g:i A" }} - {{ event.end_datetime|time:"g:i A" }}</p>
+                        <p class="mb-1"><strong>Location:</strong> {{ event.location }}</p>
+                        <p class="mb-0"><strong>Organizer:</strong> {{ event.organizer.get_full_name|default:event.organizer.username }}</p>
+                    </div>
+                </div>
+                
+                {% if already_registered %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    You are already registered for this event.
+                    <a href="{% url 'events:detail' event.id %}" class="alert-link">View event details</a>.
+                </div>
+                {% else %}
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {{ form|crispy }}
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        By registering, you confirm that you will attend this event.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check-circle"></i> Confirm Registration
+                        </button>
+                        <a href="{% url 'events:detail' event.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

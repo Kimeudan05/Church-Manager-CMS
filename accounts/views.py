@@ -25,9 +25,23 @@ class CustomLoginView(SuccessMessageMixin, LoginView):
     success_message = "Welcome back! You are now logged in."
 
     def get_success_url(self):
-        # Redirect to dashboard if user is staff/admin, else to member dashboard
-        if self.request.user.is_staff:
+        user = self.request.user
+
+        # Admin users based on church_role
+        if hasattr(user, "church_role") and user.church_role.role_type in [
+            "super_admin",
+            "church_admin",
+        ]:
             return reverse_lazy("dashboard:admin")
+
+        # Group leaders
+        if (
+            hasattr(user, "church_role")
+            and user.church_role.role_type == "group_leader"
+        ):
+            return reverse_lazy("dashboard:group_leader")
+
+        # Default member dashboard
         return reverse_lazy("dashboard:member")
 
 

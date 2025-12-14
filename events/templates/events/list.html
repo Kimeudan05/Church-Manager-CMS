@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Events - Church CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-calendar-alt"></i> Church Events
+    </h1>
+    
+    {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' or user.church_role.can_manage_events %}
+    <a href="{% url 'events:create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Create Event
+    </a>
+    {% endif %}
+</div>
+
+<!-- Filter Form -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="fas fa-filter"></i> Filter Events
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                {{ filter_form.event_type|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.start_date|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.end_date|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.is_church_wide|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.group|as_crispy_field }}
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-calendar-check"></i> Calendar View
+                </h5>
+                <a href="{% url 'events:calendar' %}" class="btn btn-light mt-2">
+                    <i class="fas fa-calendar"></i> View Calendar
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-user-check"></i> My Events
+                </h5>
+                <a href="{% url 'events:my_events' %}" class="btn btn-light mt-2">
+                    <i class="fas fa-list"></i> View My Events
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-clock"></i> Upcoming
+                </h5>
+                <p class="card-text">{{ upcoming_events|length }} events</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Events List -->
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-list"></i> All Events
+            </h5>
+            <span class="badge bg-light text-dark">
+                {{ events.paginator.count }} total
+            </span>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        {% if events %}
+        <div class="list-group">
+            {% for event in events %}
+            <div class="list-group-item list-group-item-action">
+                <div class="d-flex w-100 justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <h5 class="mb-1">
+                            <a href="{% url 'events:detail' event.id %}" class="text-decoration-none">
+                                {{ event.title }}
+                            </a>
+                            <span class="badge bg-{{ event.event_type|yesno:'primary,success,info,warning,danger,secondary' }} ms-2">
+                                {{ event.get_event_type_display }}
+                            </span>
+                            {% if event.is_church_wide %}
+                            <span class="badge bg-info">Church-wide</span>
+                            {% endif %}
+                        </h5>
+                        
+                        <div class="row mt-2">
+                            <div class="col-md-4">
+                                <p class="mb-1">
+                                    <i class="fas fa-calendar"></i> 
+                                    <strong>Date:</strong> {{ event.start_datetime|date:"F d, Y" }}
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1">
+                                    <i class="fas fa-clock"></i> 
+                                    <strong>Time:</strong> {{ event.start_datetime|time:"g:i A" }} - {{ event.end_datetime|time:"g:i A" }}
+                                </p>
+                            </div>
+                            <div class="col-md-4">
+                                <p class="mb-1">
+                                    <i class="fas fa-map-marker-alt"></i> 
+                                    <strong>Location:</strong> {{ event.location }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {% if event.description %}
+                        <p class="mb-1 mt-2">{{ event.description|truncatechars:200 }}</p>
+                        {% endif %}
+                        
+                        <div class="mt-2">
+                            {% if event.requires_registration %}
+                            <span class="badge bg-warning">Registration Required</span>
+                            {% endif %}
+                            
+                            {% if event.registration_deadline %}
+                            <span class="badge bg-secondary">
+                                Register by: {{ event.registration_deadline|date:"M d" }}
+                            </span>
+                            {% endif %}
+                            
+                            {% if event.capacity %}
+                            <span class="badge bg-dark">
+                                Capacity: {{ event.capacity }}
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="ms-3">
+                        {% if event.start_datetime > now %}
+                        <span class="badge bg-success">Upcoming</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Past</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-user"></i> Organized by: {{ event.organizer.get_full_name|default:event.organizer.username }}
+                        </small>
+                        {% if event.assigned_to %}
+                        <small class="text-muted ms-3">
+                            <i class="fas fa-users"></i> Assigned to: {{ event.assigned_to.name }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'events:detail' event.id %}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i> Details
+                        </a>
+                        {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' or user.church_role.can_manage_events %}
+                        <a href="{% url 'events:update' event.id %}" class="btn btn-outline-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No events found matching your criteria.
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if is_paginated %}
+    <div class="card-footer">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        Previous
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                        Next
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Upcoming Events Sidebar -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-plus"></i> Upcoming Events
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if upcoming_events %}
+                <div class="list-group">
+                    {% for event in upcoming_events %}
+                    <a href="{% url 'events:detail' event.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ event.title }}</h6>
+                            <small>{{ event.start_datetime|date:"M d" }}</small>
+                        </div>
+                        <p class="mb-1 small">{{ event.location }}</p>
+                        <small class="text-muted">
+                            {{ event.get_event_type_display }}
+                            {% if event.requires_registration %}
+                            • Registration required
+                            {% endif %}
+                        </small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No upcoming events.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-history"></i> Recent Past Events
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if past_events %}
+                <div class="list-group">
+                    {% for event in past_events %}
+                    <a href="{% url 'events:detail' event.id %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ event.title }}</h6>
+                            <small>{{ event.start_datetime|date:"M d" }}</small>
+                        </div>
+                        <p class="mb-1 small">{{ event.location }}</p>
+                        <small class="text-muted">
+                            {{ event.get_event_type_display }}
+                        </small>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No past events.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set today's date as default for start date
+    const startDateField = document.querySelector('#id_start_date');
+    const endDateField = document.querySelector('#id_end_date');
+    
+    if (startDateField && !startDateField.value) {
+        const today = new Date().toISOString().split('T')[0];
+        startDateField.value = today;
+    }
+    
+    // Set end date to 30 days from now if empty
+    if (endDateField && !endDateField.value) {
+        const futureDate = new Date();
+        futureDate.setDate(futureDate.getDate() + 30);
+        endDateField.value = futureDate.toISOString().split('T')[0];
+    }
+});
+</script>
+{% endblock %}

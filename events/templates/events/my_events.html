@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+
+{% block title %}My Events - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">
+            <i class="fas fa-calendar-check"></i> My Events
+        </h1>
+        <p class="lead">Welcome, {{ user.get_full_name|default:user.username }}! Here are the events you're involved with.</p>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ registrations|length }}</h3>
+                <p class="mb-0">Total Registrations</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ upcoming_registrations|length }}</h3>
+                <p class="mb-0">Upcoming Events</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ past_registrations|length }}</h3>
+                <p class="mb-0">Past Events</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ organized_events|length }}</h3>
+                <p class="mb-0">Organized Events</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Events -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-calendar-plus"></i> My Upcoming Events
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if upcoming_registrations %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date & Time</th>
+                        <th>Location</th>
+                        <th>Registration Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registration in upcoming_registrations %}
+                    <tr>
+                        <td>
+                            <strong>
+                                <a href="{% url 'events:detail' registration.event.id %}">
+                                    {{ registration.event.title }}
+                                </a>
+                            </strong>
+                            <br>
+                            <small class="text-muted">
+                                {{ registration.event.get_event_type_display }}
+                            </small>
+                        </td>
+                        <td>
+                            {{ registration.event.start_datetime|date:"M d, Y" }}
+                            <br>
+                            <small class="text-muted">
+                                {{ registration.event.start_datetime|time:"g:i A" }}
+                            </small>
+                        </td>
+                        <td>{{ registration.event.location }}</td>
+                        <td>{{ registration.registered_at|date:"M d, Y" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'events:detail' registration.event.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <a href="{% url 'events:unregister' registration.event.id %}" class="btn btn-outline-danger">
+                                    <i class="fas fa-times"></i> Cancel
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> You don't have any upcoming event registrations.
+            <a href="{% url 'events:list' %}" class="alert-link">Browse events to register</a>.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Past Events -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-history"></i> My Past Events
+        </h5>
+    </div>
+    <div class="card-body">
+        {% if past_registrations %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date & Time</th>
+                        <th>Location</th>
+                        <th>Attendance</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registration in past_registrations %}
+                    <tr>
+                        <td>
+                            <strong>
+                                <a href="{% url 'events:detail' registration.event.id %}">
+                                    {{ registration.event.title }}
+                                </a>
+                            </strong>
+                            <br>
+                            <small class="text-muted">
+                                {{ registration.event.get_event_type_display }}
+                            </small>
+                        </td>
+                        <td>
+                            {{ registration.event.start_datetime|date:"M d, Y" }}
+                            <br>
+                            <small class="text-muted">
+                                {{ registration.event.start_datetime|time:"g:i A" }}
+                            </small>
+                        </td>
+                        <td>{{ registration.event.location }}</td>
+                        <td>
+                            {% if registration.attended %}
+                            <span class="badge bg-success">Attended</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Did Not Attend</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'events:detail' registration.event.id %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> You haven't attended any events yet.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Events I Organize -->
+{% if organized_events %}
+<div class="card shadow">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+            <i class="fas fa-user-tie"></i> Events I Organize
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Event</th>
+                        <th>Date & Time</th>
+                        <th>Location</th>
+                        <th>Registrations</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in organized_events %}
+                    <tr>
+                        <td>
+                            <strong>
+                                <a href="{% url 'events:detail' event.id %}">
+                                    {{ event.title }}
+                                </a>
+                            </strong>
+                            <br>
+                            <small class="text-muted">
+                                {{ event.get_event_type_display }}
+                            </small>
+                        </td>
+                        <td>
+                            {{ event.start_datetime|date:"M d, Y" }}
+                            <br>
+                            <small class="text-muted">
+                                {{ event.start_datetime|time:"g:i A" }}
+                            </small>
+                        </td>
+                        <td>{{ event.location }}</td>
+                        <td>
+                            <span class="badge bg-primary">{{ event.registrations.count }}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'events:detail' event.id %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                <a href="{% url 'events:registrations' event.id %}" class="btn btn-outline-success">
+                                    <i class="fas fa-users"></i> Registrations
+                                </a>
+                                <a href="{% url 'events:update' event.id %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Links -->
+<div class="card shadow mt-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-bolt"></i> Quick Actions
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'events:list' %}" class="btn btn-outline-primary btn-block">
+                    <i class="fas fa-search"></i> Browse Events
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'events:calendar' %}" class="btn btn-outline-success btn-block">
+                    <i class="fas fa-calendar"></i> Calendar View
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'dashboard:member' %}" class="btn btn-outline-info btn-block">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+            </div>
+            <div class="col-md-3 mb-2">
+                <a href="{% url 'accounts:profile' %}" class="btn btn-outline-warning btn-block">
+                    <i class="fas fa-user"></i> My Profile
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

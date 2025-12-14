@@ -31,12 +31,14 @@ class Event(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name="organized_events",
     )
     assigned_to = models.ForeignKey(
         "groups.ChurchGroup",
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name="group_events",
     )
 
@@ -49,6 +51,7 @@ class Event(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name="created_events",
     )
     created_at = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Unregister from {{ event.title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-minus"></i> Cancel Registration
+                </h4>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-calendar-times fa-5x text-warning"></i>
+                </div>
+                
+                <h4 class="text-warning">Cancel Registration?</h4>
+                <p class="lead">Are you sure you want to cancel your registration for this event?</p>
+                
+                <div class="card mb-4">
+                    <div class="card-body text-start">
+                        <h5>{{ event.title }}</h5>
+                        <p class="mb-1"><strong>Date:</strong> {{ event.start_datetime|date:"l, F d, Y" }}</p>
+                        <p class="mb-1"><strong>Time:</strong> {{ event.start_datetime|time:"g:i A" }} - {{ event.end_datetime|time:"g:i A" }}</p>
+                        <p class="mb-1"><strong>Location:</strong> {{ event.location }}</p>
+                        <p class="mb-0"><strong>Organizer:</strong> {{ event.organizer.get_full_name|default:event.organizer.username }}</p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    You can re-register later if you change your mind, subject to availability.
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-user-minus"></i> Yes, Cancel Registration
+                        </button>
+                        <a href="{% url 'events:detail' event.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Keep Registration
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

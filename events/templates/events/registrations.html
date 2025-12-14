@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrations for {{ event.title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-users"></i> Registrations for {{ event.title }}
+    </h1>
+    <a href="{% url 'events:detail' event.id %}" class="btn btn-outline-primary">
+        <i class="fas fa-arrow-left"></i> Back to Event
+    </a>
+</div>
+
+<!-- Registration Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_registered }}</h3>
+                <p class="mb-0">Total Registered</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_attended }}</h3>
+                <p class="mb-0">Attended</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">
+                    {% if total_registered > 0 %}
+                    {{ total_attended|floatformat:0 }}%
+                    {% else %}
+                    0%
+                    {% endif %}
+                </h3>
+                <p class="mb-0">Attendance Rate</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h3 class="mb-0">
+                    {% if event.capacity %}
+                    {{ total_registered }}/{{ event.capacity }}
+                    {% else %}
+                    {{ total_registered }}
+                    {% endif %}
+                </h3>
+                <p class="mb-0">Capacity</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registrations Table -->
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-list"></i> Registration List
+            </h5>
+            <span class="badge bg-light text-dark">
+                {{ registrations|length }} registrations
+            </span>
+        </div>
+    </div>
+    
+    <div class="card-body">
+        {% if registrations %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Registration Date</th>
+                        <th>Attended</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registration in registrations %}
+                    <tr>
+                        <td>
+                            <strong>{{ registration.member.get_full_name }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-envelope"></i> {{ registration.member.email|default:"No email" }}
+                            </small>
+                            <br>
+                            <small class="text-muted">
+                                <i class="fas fa-phone"></i> {{ registration.member.phone|default:"No phone" }}
+                            </small>
+                        </td>
+                        <td>{{ registration.registered_at|date:"M d, Y g:i A" }}</td>
+                        <td>
+                            {% if registration.attended %}
+                            <span class="badge bg-success">Yes</span>
+                            {% else %}
+                            <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if registration.notes %}
+                            <small>{{ registration.notes|truncatechars:50 }}</small>
+                            {% else %}
+                            <span class="text-muted">None</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'events:update_attendance' registration.id %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-edit"></i> Update
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No one has registered for this event yet.
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="card-footer">
+        <div class="d-flex justify-content-between">
+            <div>
+                <strong>Total Registered:</strong> {{ total_registered }}
+            </div>
+            <div>
+                <strong>Attended:</strong> {{ total_attended }}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Options -->
+<div class="card shadow mt-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-download"></i> Export Registrations
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-3">
+                <button class="btn btn-outline-primary w-100">
+                    <i class="fas fa-file-excel"></i> Export to Excel
+                </button>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-success w-100">
+                    <i class="fas fa-file-csv"></i> Export to CSV
+                </button>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-danger w-100">
+                    <i class="fas fa-file-pdf"></i> Export to PDF
+                </button>
+            </div>
+            <div class="col-md-3">
+                <button class="btn btn-outline-info w-100">
+                    <i class="fas fa-print"></i> Print List
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -97,11 +97,10 @@
               >
             </div>
             <p class="mb-1 small text-muted">
-              <i class="fas fa-envelope"></i> {{ member.email|default:"No email"
-              }}
+              <i class="fas fa-envelope"></i> {{ member.email|default:"No email"}}
             </p>
             <span
-              class="badge bg-{{ member.status == 'active'|yesno:'success,warning' }}"
+                class="badge bg-{% if member.status == 'active' %}success{% else %}warning{% endif %}"
             >
               {{ member.get_status_display }}
             </span>
@@ -123,7 +122,7 @@
           <h5 class="mb-0">
             <i class="fas fa-calendar-alt"></i> Upcoming Events
           </h5>
-          <a href="#" class="btn btn-light btn-sm">
+          <a href="{% url 'events:list' %}" class="btn btn-light btn-sm">
             <i class="fas fa-external-link-alt"></i> View All
           </a>
         </div>

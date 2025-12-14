@@ -1,0 +1,453 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Event Details -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-calendar-alt"></i> {{ event.title }}
+                    </h3>
+                    <span class="badge bg-light text-dark">
+                        {{ event.get_event_type_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Event Status Badges -->
+                <div class="mb-4">
+                    {% if event.start_datetime > now %}
+                    <span class="badge bg-success">Upcoming</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Past</span>
+                    {% endif %}
+                    
+                    {% if event.is_church_wide %}
+                    <span class="badge bg-info">Church-wide</span>
+                    {% endif %}
+                    
+                    {% if event.requires_registration %}
+                    <span class="badge bg-warning">Registration Required</span>
+                    {% endif %}
+                    
+                    {% if event.registration_deadline and event.registration_deadline < now %}
+                    <span class="badge bg-danger">Registration Closed</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Event Description -->
+                {% if event.description %}
+                <div class="mb-4">
+                    <h5>Description</h5>
+                    <p class="lead">{{ event.description|linebreaks }}</p>
+                </div>
+                {% endif %}
+                
+                <!-- Event Details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-info-circle"></i> Event Information</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Date:</dt>
+                            <dd class="col-sm-8">{{ event.start_datetime|date:"l, F d, Y" }}</dd>
+                            
+                            <dt class="col-sm-4">Time:</dt>
+                            <dd class="col-sm-8">
+                                {{ event.start_datetime|time:"g:i A" }} - {{ event.end_datetime|time:"g:i A" }}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Location:</dt>
+                            <dd class="col-sm-8">{{ event.location }}</dd>
+                            
+                            <dt class="col-sm-4">Organizer:</dt>
+                            <dd class="col-sm-8">{{ event.organizer.get_full_name|default:event.organizer.username }}</dd>
+                        </dl>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-users"></i> Event Details</h5>
+                        <dl class="row">
+                            <dt class="col-sm-5">Audience:</dt>
+                            <dd class="col-sm-7">
+                                {% if event.is_church_wide %}
+                                All Church Members
+                                {% elif event.assigned_to %}
+                                {{ event.assigned_to.name }} Group
+                                {% else %}
+                                Specific Groups/Members
+                                {% endif %}
+                            </dd>
+                            
+                            {% if event.capacity %}
+                            <dt class="col-sm-5">Capacity:</dt>
+                            <dd class="col-sm-7">{{ event.capacity }} people</dd>
+                            {% endif %}
+                            
+                            {% if event.requires_registration %}
+                            <dt class="col-sm-5">Registration:</dt>
+                            <dd class="col-sm-7">Required</dd>
+                            
+                            {% if event.registration_deadline %}
+                            <dt class="col-sm-5">Deadline:</dt>
+                            <dd class="col-sm-7">{{ event.registration_deadline|date:"M d, Y g:i A" }}</dd>
+                            {% endif %}
+                            {% endif %}
+                            
+                            <dt class="col-sm-5">Created:</dt>
+                            <dd class="col-sm-7">{{ event.created_at|date:"M d, Y" }}</dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                <!-- Allowed Groups/Members -->
+                {% if not event.is_church_wide %}
+                <div class="row mb-4">
+                    {% if event.allowed_groups.exists %}
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-layer-group"></i> Allowed Groups</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for group in event.allowed_groups.all %}
+                            <span class="badge bg-info">{{ group.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if event.allowed_members.exists %}
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user-check"></i> Allowed Members</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for member in event.allowed_members.all %}
+                            <span class="badge bg-secondary">{{ member.get_full_name|default:member.username }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Attendance Stats -->
+                {% if attendance_stats %}
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5><i class="fas fa-chart-bar"></i> Attendance Statistics</h5>
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <h3>{{ attendance_stats.total_registered }}</h3>
+                                <p class="text-muted">Registered</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3>{{ attendance_stats.total_attended }}</h3>
+                                <p class="text-muted">Attended</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3>{{ attendance_stats.attendance_rate|floatformat:1 }}%</h3>
+                                <p class="text-muted">Attendance Rate</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer">
+                <div class="d-flex justify-content-between">
+                    <!-- Registration Button -->
+                    {% if event.start_datetime > now %}
+                        {% if is_registered %}
+                        <div class="btn-group">
+                            <a href="{% url 'events:registrations' event.id %}" class="btn btn-success">
+                                <i class="fas fa-check"></i> Registered
+                            </a>
+                            <a href="{% url 'events:unregister' event.id %}" class="btn btn-outline-danger">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                        {% elif can_register %}
+                        <a href="{% url 'events:register' event.id %}" class="btn btn-primary">
+                            <i class="fas fa-user-plus"></i> Register Now
+                        </a>
+                        {% elif event.requires_registration %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="fas fa-ban"></i> Registration Not Available
+                        </button>
+                        {% else %}
+                        <span class="badge bg-info">No Registration Required</span>
+                        {% endif %}
+                    {% else %}
+                        {% if is_registered %}
+                        <span class="badge bg-secondary">You attended this event</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark">Past Event</span>
+                        {% endif %}
+                    {% endif %}
+                    
+                    <!-- Action Buttons -->
+                    <div class="btn-group">
+                        <a href="{% url 'events:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Events
+                        </a>
+                        
+                        {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' or user.church_role.can_manage_events or event.organizer == user %}
+                        <a href="{% url 'events:registrations' event.id %}" class="btn btn-outline-success">
+                            <i class="fas fa-users"></i> Registrations
+                        </a>
+                        <a href="{% url 'events:update' event.id %}" class="btn btn-outline-warning">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Registration Info -->
+        {% if user_registration %}
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-check"></i> Your Registration
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Registration Date:</strong> {{ user_registration.registered_at|date:"F d, Y g:i A" }}</p>
+                        <p><strong>Status:</strong> 
+                            {% if user_registration.attended %}
+                            <span class="badge bg-success">Attended</span>
+                            {% elif event.start_datetime < now %}
+                            <span class="badge bg-warning">Registered (Past Event)</span>
+                            {% else %}
+                            <span class="badge bg-primary">Registered</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        {% if user_registration.notes %}
+                        <p><strong>Your Notes:</strong> {{ user_registration.notes }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'events:calendar' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-calendar"></i> Calendar View
+                    </a>
+                    
+                    <a href="{% url 'events:my_events' %}" class="btn btn-outline-success">
+                        <i class="fas fa-user-check"></i> My Events
+                    </a>
+                    
+                    {% if can_register and not is_registered %}
+                    <a href="{% url 'events:register' event.id %}" class="btn btn-primary">
+                        <i class="fas fa-user-plus"></i> Register Now
+                    </a>
+                    {% endif %}
+                    
+                    {% if is_registered %}
+                    <a href="{% url 'events:unregister' event.id %}" class="btn btn-outline-danger">
+                        <i class="fas fa-user-minus"></i> Cancel Registration
+                    </a>
+                    {% endif %}
+                    
+                    {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' or user.church_role.can_manage_events %}
+                    <a href="{% url 'events:registrations' event.id %}" class="btn btn-outline-info">
+                        <i class="fas fa-list"></i> View Registrations
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Event Statistics -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie"></i> Event Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    {% if event.capacity %}
+                    <div class="progress" style="height: 25px;">
+                        {% with percentage=attendance_stats.total_registered|default:0|divisibleby:event.capacity %}
+                        <div class="progress-bar bg-success" style="width: {{ percentage }}%">
+                            {{ attendance_stats.total_registered|default:0 }}/{{ event.capacity }}
+                        </div>
+                        {% endwith %}
+                    </div>
+                    <small class="text-muted">Capacity Usage</small>
+                    {% endif %}
+                </div>
+                
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Days Until:</dt>
+                    <dd class="col-sm-6">
+                        {% if event.start_datetime > now %}
+                        {{ event.start_datetime|timeuntil }}
+                        {% else %}
+                        <span class="text-muted">Past Event</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-6">Duration:</dt>
+                    <dd class="col-sm-6">
+                        {% with duration=event.end_datetime|timeuntil:event.start_datetime %}
+                        {{ duration }}
+                        {% endwith %}
+                    </dd>
+                    
+                    {% if event.registration_deadline %}
+                    <dt class="col-sm-6">Reg. Deadline:</dt>
+                    <dd class="col-sm-6">
+                        {% if event.registration_deadline > now %}
+                        {{ event.registration_deadline|timeuntil }}
+                        {% else %}
+                        <span class="text-danger">Passed</span>
+                        {% endif %}
+                    </dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+        
+        <!-- Share Event -->
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-share-alt"></i> Share Event
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <p class="small text-muted">Share this event with others</p>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary btn-sm" onclick="shareEvent('facebook')">
+                        <i class="fab fa-facebook"></i>
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="shareEvent('twitter')">
+                        <i class="fab fa-twitter"></i>
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="shareEvent('whatsapp')">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="copyEventLink()">
+                        <i class="fas fa-link"></i> Copy Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registrations (if visible) -->
+{% if registrations %}
+<div class="card shadow mt-4">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-users"></i> Event Registrations ({{ registration_count }})
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Member</th>
+                        <th>Registration Date</th>
+                        <th>Attended</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registration in registrations %}
+                    <tr>
+                        <td>
+                            <strong>{{ registration.member.get_full_name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ registration.member.email|default:"No email" }}</small>
+                        </td>
+                        <td>{{ registration.registered_at|date:"M d, Y g:i A" }}</td>
+                        <td>
+                            {% if registration.attended %}
+                            <span class="badge bg-success">Yes</span>
+                            {% else %}
+                            <span class="badge bg-secondary">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if registration.notes %}
+                            <small>{{ registration.notes|truncatechars:50 }}</small>
+                            {% else %}
+                            <span class="text-muted">None</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'events:update_attendance' registration.id %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-edit"></i> Update
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function shareEvent(platform) {
+    const url = window.location.href;
+    const title = "{{ event.title }}";
+    const text = "Check out this event: {{ event.title }} on {{ event.start_datetime|date:'F d, Y' }}";
+    
+    let shareUrl = '';
+    
+    switch(platform) {
+        case 'facebook':
+            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+            break;
+        case 'twitter':
+            shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+            break;
+        case 'whatsapp':
+            shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+            break;
+    }
+    
+    if (shareUrl) {
+        window.open(shareUrl, '_blank', 'width=600,height=400');
+    }
+}
+
+function copyEventLink() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Event link copied to clipboard!');
+    });
+}
+</script>
+{% endblock %}

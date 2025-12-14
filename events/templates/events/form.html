@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-calendar-plus"></i> {{ title }}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-info-circle"></i> Basic Information
+                            </h5>
+                            {{ form.title|as_crispy_field }}
+                            {{ form.event_type|as_crispy_field }}
+                            {{ form.description|as_crispy_field }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-clock"></i> Time & Location
+                            </h5>
+                            {{ form.start_datetime|as_crispy_field }}
+                            {{ form.end_datetime|as_crispy_field }}
+                            {{ form.location|as_crispy_field }}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-users"></i> Audience
+                            </h5>
+                            {{ form.is_church_wide|as_crispy_field }}
+                            
+                            <div id="specific-audience" style="display: none;">
+                                {{ form.assigned_to|as_crispy_field }}
+                                {{ form.allowed_groups|as_crispy_field }}
+                                {{ form.allowed_members|as_crispy_field }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">
+                                <i class="fas fa-cog"></i> Event Settings
+                            </h5>
+                            {{ form.organizer|as_crispy_field }}
+                            {{ form.requires_registration|as_crispy_field }}
+                            
+                            <div id="registration-settings" style="display: none;">
+                                {{ form.registration_deadline|as_crispy_field }}
+                                {{ form.capacity|as_crispy_field }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> {{ submit_text }}
+                        </button>
+                        <a href="{% url 'events:list' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const isChurchWideCheckbox = document.querySelector('#id_is_church_wide');
+    const specificAudienceDiv = document.querySelector('#specific-audience');
+    
+    const requiresRegistrationCheckbox = document.querySelector('#id_requires_registration');
+    const registrationSettingsDiv = document.querySelector('#registration-settings');
+    
+    // Toggle specific audience fields
+    function toggleSpecificAudience() {
+        if (isChurchWideCheckbox.checked) {
+            specificAudienceDiv.style.display = 'none';
+        } else {
+            specificAudienceDiv.style.display = 'block';
+        }
+    }
+    
+    // Toggle registration settings
+    function toggleRegistrationSettings() {
+        if (requiresRegistrationCheckbox.checked) {
+            registrationSettingsDiv.style.display = 'block';
+        } else {
+            registrationSettingsDiv.style.display = 'none';
+        }
+    }
+    
+    // Initial state
+    toggleSpecificAudience();
+    toggleRegistrationSettings();
+    
+    // Add event listeners
+    isChurchWideCheckbox.addEventListener('change', toggleSpecificAudience);
+    requiresRegistrationCheckbox.addEventListener('change', toggleRegistrationSettings);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Update Attendance - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-check"></i> Update Attendance
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5>Registration Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Event:</strong> {{ event.title }}</p>
+                                <p><strong>Member:</strong> {{ object.member.get_full_name }}</p>
+                                <p><strong>Registered:</strong> {{ object.registered_at|date:"F d, Y g:i A" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Current Attendance:</strong> 
+                                    {% if object.attended %}
+                                    <span class="badge bg-success">Attended</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Not Attended</span>
+                                    {% endif %}
+                                </p>
+                                <p><strong>Notes:</strong> {{ object.notes|default:"None" }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {{ form|crispy }}
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-save"></i> Update Attendance
+                        </button>
+                        <a href="{% url 'events:registrations' event.id %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
