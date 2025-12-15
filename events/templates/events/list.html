@@ -244,7 +244,7 @@
 
 <!-- Upcoming Events Sidebar -->
 <div class="row mt-4">
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card shadow">
             <div class="card-header bg-success text-white">
                 <h5 class="mb-0">
@@ -276,8 +276,7 @@
             </div>
         </div>
     </div>
-    
-    <div class="col-md-6">
+    <div class="col-md-4">
         <div class="card shadow">
             <div class="card-header bg-secondary text-white">
                 <h5 class="mb-0">
@@ -303,6 +302,64 @@
                 {% else %}
                 <p class="text-muted">No past events.</p>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-play-circle"></i> Ongoing Events
+                </h5>
+            </div>
+
+            <div class="card-body">
+                {% if ongoing_events %}
+                    <div class="list-group">
+                        {% for event in ongoing_events %}
+                            <a href="{% url 'events:detail' event.id %}"
+                            class="list-group-item list-group-item-action">
+
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-1">{{ event.title }}</h6>
+                                    <span class="badge bg-warning text-dark">
+                                        Ongoing
+                                    </span>
+                                </div>
+
+                                <small class="text-muted">
+                                    <i class="fas fa-clock"></i>
+                                    <strong>Started:</strong>
+                                    {{ event.start_datetime|date:"M d, Y" }}
+                                    {{ event.start_datetime|time:"g:i A" }}
+                                    &nbsp;→&nbsp;
+                                    <strong>Will end:</strong>
+                                    {{ event.end_datetime|date:"M d, Y" }}
+                                    {{ event.end_datetime|time:"g:i A" }}
+                                </small>
+
+
+                                <br>
+
+                                <small class="text-muted">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    {{ event.location }}
+                                </small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        No events are currently ongoing.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+                
             </div>
         </div>
     </div>

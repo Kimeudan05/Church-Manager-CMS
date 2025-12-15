@@ -24,8 +24,11 @@
                 
                 <form method="post" novalidate>
                     {% csrf_token %}
-                    
-                    {{ form|crispy }}
+                    {% for hidden in form.hidden_fields %}
+                        {{ hidden }}
+                    {% endfor %}
+
+                    {{ form|crispy }}                 
                     
                     <div class="mt-4">
                         <h5>Member Information</h5>

@@ -34,7 +34,22 @@ class EventListView(LoginRequiredMixin, ListView):
     paginate_by = 12
 
     def get_queryset(self):
-        queryset = Event.objects.all().order_by("-start_datetime")
+        user = self.request.user
+
+        # get user's group IDS
+
+        user_group_ids = Membership.objects.filter(member=user).values_list(
+            "group_id", flat=True
+        )
+
+        # BASE visibility rules
+
+        queryset = Event.objects.filter(
+            Q(is_church_wide=True)
+            | Q(allowed_groups__id__in=user_group_ids)
+            | Q(allowed_members=user)
+            | Q(assigned_to__id__in=user_group_ids)
+        ).distinct()
 
         # Apply filters from form
         form = EventFilterForm(self.request.GET)
@@ -61,23 +76,41 @@ class EventListView(LoginRequiredMixin, ListView):
 
             if group:
                 queryset = queryset.filter(
-                    Q(assigned_to=group)
-                    | Q(allowed_groups=group)
-                    | Q(is_church_wide=True)
-                ).distinct()
+                    Q(assigned_to=group) | Q(allowed_groups=group)
+                )
 
         return queryset
 
+    def get_base_queryset(self):
+        user = self.request.user
+        user_group_ids = Membership.objects.filter(member=user).values_list(
+            "group_id", flat=True
+        )
+
+        return Event.objects.filter(
+            Q(is_church_wide=True)
+            | Q(allowed_groups__id__in=user_group_ids)
+            | Q(allowed_members=user)
+            | Q(assigned_to__id__in=user_group_ids)
+        ).distinct()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        now = timezone.now()
+        base_qs = self.get_base_queryset()
+
         context["filter_form"] = EventFilterForm(self.request.GET)
         context["upcoming_events"] = Event.objects.filter(
-            start_datetime__gte=timezone.now()
+            start_datetime__gte=now
         ).order_by("start_datetime")[:5]
-        context["past_events"] = Event.objects.filter(
-            start_datetime__lt=timezone.now()
-        ).order_by("-start_datetime")[:5]
-        context["now"] = timezone.now()
+        context["past_events"] = Event.objects.filter(start_datetime__lt=now).order_by(
+            "-start_datetime"
+        )[:5]
+        context["now"] = now
+        context["ongoing_events"] = Event.objects.filter(
+            start_datetime__lte=now,
+            end_datetime__gte=now,
+        ).order_by("start_datetime")
         return context
 
 
@@ -277,6 +310,7 @@ class EventCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
                 "super_admin",
                 "church_admin",
                 "sub_admin",
+                "group_leader",
             ]:
                 return super().dispatch(request, *args, **kwargs)
 

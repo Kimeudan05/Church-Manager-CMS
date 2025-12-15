@@ -67,6 +67,22 @@ class Event(models.Model):
             else self.title
         )
 
+    def is_visible_to(self, user):
+        if self.is_church_wide:
+            return True
+        if user in self.allowed_members.all():
+            return True
+        if (
+            self.assigned_to
+            and user.memberships.filter(group=self.assigned_to).exists()
+        ):
+            return True
+        if self.allowed_groups.filter(
+            id__in=user.memberships.values_list("group_id", flat=True)
+        ).exists():
+            return True
+        return False
+
 
 class EventRegistration(models.Model):
     """Track event registrations"""

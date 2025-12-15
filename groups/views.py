@@ -20,7 +20,8 @@ from core.mixins import AdminRequiredMixin, GroupLeaderRequiredMixin
 from .models import ChurchGroup, Membership, UserRole
 from .forms import (
     ChurchGroupForm,
-    MembershipForm,
+    AddMembershipForm,
+    UpdateMembershipForm,
     UserRoleForm,
     GroupLeaderAssignmentForm,
 )
@@ -166,79 +167,51 @@ class GroupMembersView(LoginRequiredMixin, DetailView):
 
         # Form for adding new members
         if context["can_manage_members"]:
-            context["add_member_form"] = MembershipForm(group=group)
+            context["add_member_form"] = AddMembershipForm(group=group)
 
         return context
 
 
 class AddGroupMemberView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
-    """Add a member to a group"""
-
     model = Membership
-    form_class = MembershipForm
+    form_class = AddMembershipForm
     template_name = "groups/add_member.html"
 
     def get_success_url(self):
         return reverse_lazy("groups:members", kwargs={"pk": self.kwargs["group_id"]})
 
     def get_success_message(self, cleaned_data):
-        return f"Member added to group successfully!"
+        return "Member added to group successfully!"
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        group_id = self.kwargs.get("group_id")
-        group = get_object_or_404(ChurchGroup, pk=group_id)
+        group = get_object_or_404(ChurchGroup, pk=self.kwargs["group_id"])
         kwargs["group"] = group
         return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        group_id = self.kwargs.get("group_id")
-        group = get_object_or_404(ChurchGroup, pk=group_id)
-        context["group"] = group
+        group = get_object_or_404(ChurchGroup, pk=self.kwargs["group_id"])
+        context["group"] = group  # <-- add this
         context["title"] = f"Add Member to {group.name}"
         return context
 
-    def form_valid(self, form):
-        group_id = self.kwargs.get("group_id")
-        group = get_object_or_404(ChurchGroup, pk=group_id)
-        form.instance.group = group
-
-        # Check if member already in 3 groups
-        member = form.instance.member
-        existing_groups = Membership.objects.filter(member=member).count()
-        if existing_groups >= 3:
-            form.add_error(
-                "member",
-                f"{member.get_full_name()} already belongs to 3 groups (maximum allowed).",
-            )
-            return self.form_invalid(form)
-
-        return super().form_valid(form)
-
 
 class UpdateGroupMemberView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
-    """Update a member's group membership"""
-
     model = Membership
-    form_class = MembershipForm
+    form_class = UpdateMembershipForm
     template_name = "groups/update_member.html"
 
     def get_success_url(self):
         return reverse_lazy("groups:members", kwargs={"pk": self.object.group.id})
 
     def get_success_message(self, cleaned_data):
-        return f"Member information updated successfully!"
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["group"] = self.object.group
-        return kwargs
+        return "Membership updated successfully!"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["title"] = f"Update Membership for {self.object.member.get_full_name()}"
         context["group"] = self.object.group
+        context["title"] = f"Update Membership for {self.object.member.get_full_name()}"
         return context
 
 

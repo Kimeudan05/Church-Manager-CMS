@@ -87,7 +87,7 @@
           </a>
 
           {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' %}
-          <div class="btn-group">
+          <div class="btn-group gap-1">
             <a
               href="{% url 'groups:update' group.id %}"
               class="btn btn-outline-success btn-sm"
@@ -99,6 +99,12 @@
               class="btn btn-outline-warning btn-sm"
             >
               <i class="fas fa-user-tie"></i> Leaders
+            </a>
+            <a
+              href="{% url 'groups:delete' group.id %}"
+              class="btn btn-outline-danger btn-sm"
+            >
+              <i class="fas fa-trash"></i> Delete
             </a>
           </div>
           {% endif %}

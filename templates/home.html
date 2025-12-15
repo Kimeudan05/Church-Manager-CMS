@@ -15,42 +15,66 @@
 
   {% if user.is_authenticated %}
   <div class="row">
-    <div class="col-md-4">
-      <div class="card mb-3">
-        <div class="card-body text-center">
-          <i class="fas fa-tachometer-alt fa-3x text-primary mb-3"></i>
-          <h5 class="card-title">Dashboard</h5>
-          <p class="card-text">Go to your personalized dashboard</p>
+
+  <!-- DASHBOARD CARD -->
+  <div class="col-md-4">
+    <div class="card mb-3">
+      <div class="card-body text-center">
+        <i class="fas fa-tachometer-alt fa-3x text-primary mb-3"></i>
+        <h5 class="card-title">Dashboard</h5>
+        <p class="card-text">Go to your personalized dashboard</p>
+
+        {% if user.is_staff %}
+          <a href="{% url 'dashboard:admin' %}" class="btn btn-primary">
+            Go to Admin Dashboard
+          </a>
+
+        {% elif user.church_role and user.church_role.role_type == "group_leader" %}
+          <a href="{% url 'dashboard:group_leader' %}" class="btn btn-primary">
+            Go to Group Leader Dashboard
+          </a>
+
+        {% else %}
           <a href="{% url 'dashboard:member' %}" class="btn btn-primary">
-            Go to Dashboard
+            Go to My Dashboard
           </a>
-        </div>
+        {% endif %}
+
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card mb-3">
-        <div class="card-body text-center">
-          <i class="fas fa-user-circle fa-3x text-success mb-3"></i>
-          <h5 class="card-title">Profile</h5>
-          <p class="card-text">View and update your profile</p>
-          <a href="{% url 'accounts:profile' %}" class="btn btn-success">
-            My Profile
-          </a>
-        </div>
+  </div>
+
+  <!-- PROFILE CARD -->
+  <div class="col-md-4">
+    <div class="card mb-3">
+      <div class="card-body text-center">
+        <i class="fas fa-user-circle fa-3x text-success mb-3"></i>
+        <h5 class="card-title">Profile</h5>
+        <p class="card-text">View and update your profile</p>
+        <a href="{% url 'accounts:profile' %}" class="btn btn-success">
+          My Profile
+        </a>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card mb-3">
-        <div class="card-body text-center">
-          <i class="fas fa-sign-out-alt fa-3x text-danger mb-3"></i>
-          <h5 class="card-title">Logout</h5>
-          <p class="card-text">Logout from your account</p>
-          <a href="{% url 'accounts:logout' %}" class="btn btn-danger">
+  </div>
+      <!-- LOGOUT CARD -->
+  <div class="col-md-4">
+    <div class="card mb-3">
+      <div class="card-body text-center">
+        <i class="fas fa-sign-out-alt fa-3x text-danger mb-3"></i>
+        <h5 class="card-title">Logout</h5>
+        <p class="card-text">Logout from your account</p>
+
+        <form method="post" action="{% url 'accounts:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">
             Logout
-          </a>
-        </div>
+          </button>
+        </form>
+
       </div>
     </div>
+  </div>
   </div>
   {% else %}
   <div class="row">

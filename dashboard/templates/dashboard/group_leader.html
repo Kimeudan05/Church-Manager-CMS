@@ -48,9 +48,7 @@
           <div>
             <h6 class="card-title">Average per Group</h6>
             <h2 class="mb-0">
-              {% if my_groups.count > 0 %} {{
-              total_group_members|default:0|divisibleby:my_groups.count|default:0
-              }} {% else %}0{% endif %}
+              {{ average_members_per_group }}
             </h2>
           </div>
           <i class="fas fa-chart-bar fa-2x"></i>
@@ -162,7 +160,7 @@
             {% endif %}
           </div>
           <div class="col-md-3 mb-2">
-            <a href="#" class="btn btn-outline-info btn-block">
+            <a href="{% url 'events:create' %}" class="btn btn-outline-info btn-block">
               <i class="fas fa-calendar-plus"></i> Schedule Event
             </a>
           </div>

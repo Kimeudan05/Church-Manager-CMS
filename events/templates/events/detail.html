@@ -20,25 +20,39 @@
             <div class="card-body">
                 <!-- Event Status Badges -->
                 <div class="mb-4">
-                    {% if event.start_datetime > now %}
-                    <span class="badge bg-success">Upcoming</span>
+                    {% if event.start_datetime <= now and event.end_datetime >= now %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-play-circle"></i> Ongoing
+                        </span>
+                    {% elif event.start_datetime > now %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-calendar-plus"></i> Upcoming
+                        </span>
                     {% else %}
-                    <span class="badge bg-secondary">Past</span>
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-history"></i> Past
+                        </span>
                     {% endif %}
                     
                     {% if event.is_church_wide %}
-                    <span class="badge bg-info">Church-wide</span>
+                        <span class="badge bg-info">
+                            <i class="fas fa-globe"></i> Church-wide
+                        </span>
                     {% endif %}
                     
                     {% if event.requires_registration %}
-                    <span class="badge bg-warning">Registration Required</span>
+                        <span class="badge bg-warning">
+                            <i class="fas fa-clipboard-list"></i> Registration Required
+                        </span>
                     {% endif %}
                     
                     {% if event.registration_deadline and event.registration_deadline < now %}
-                    <span class="badge bg-danger">Registration Closed</span>
+                        <span class="badge bg-danger">
+                            <i class="fas fa-lock"></i> Registration Closed
+                        </span>
                     {% endif %}
                 </div>
-                
+
                 <!-- Event Description -->
                 {% if event.description %}
                 <div class="mb-4">
@@ -46,26 +60,37 @@
                     <p class="lead">{{ event.description|linebreaks }}</p>
                 </div>
                 {% endif %}
+
+
                 
                 <!-- Event Details -->
                 <div class="row mb-4">
                     <div class="col-md-6">
                         <h5><i class="fas fa-info-circle"></i> Event Information</h5>
                         <dl class="row">
-                            <dt class="col-sm-4">Date:</dt>
-                            <dd class="col-sm-8">{{ event.start_datetime|date:"l, F d, Y" }}</dd>
-                            
-                            <dt class="col-sm-4">Time:</dt>
+                            <dt class="col-sm-4">Start:</dt>
                             <dd class="col-sm-8">
-                                {{ event.start_datetime|time:"g:i A" }} - {{ event.end_datetime|time:"g:i A" }}
+                                {{ event.start_datetime|date:"l, F d, Y" }}
+                                at {{ event.start_datetime|time:"g:i A" }}
                             </dd>
-                            
+
+                            <dt class="col-sm-4">End:</dt>
+                            <dd class="col-sm-8">
+                                {{ event.end_datetime|date:"l, F d, Y" }}
+                                at {{ event.end_datetime|time:"g:i A" }}
+                            </dd>
+
                             <dt class="col-sm-4">Location:</dt>
-                            <dd class="col-sm-8">{{ event.location }}</dd>
-                            
+                            <dd class="col-sm-8">
+                                {{ event.location }}
+                            </dd>
+
                             <dt class="col-sm-4">Organizer:</dt>
-                            <dd class="col-sm-8">{{ event.organizer.get_full_name|default:event.organizer.username }}</dd>
+                            <dd class="col-sm-8">
+                                {{ event.organizer.get_full_name|default:event.organizer.username }} - {{event.organizer.email}}
+                            </dd>
                         </dl>
+
                     </div>
                     
                     <div class="col-md-6">
@@ -189,18 +214,25 @@
                     <!-- Action Buttons -->
                     <div class="btn-group">
                         <a href="{% url 'events:list' %}" class="btn btn-outline-secondary">
-                            <i class="fas fa-arrow-left"></i> Back to Events
+                            Back to Events
                         </a>
                         
                         {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' or user.church_role.can_manage_events or event.organizer == user %}
                         <a href="{% url 'events:registrations' event.id %}" class="btn btn-outline-success">
-                            <i class="fas fa-users"></i> Registrations
+                            Registrations
                         </a>
                         <a href="{% url 'events:update' event.id %}" class="btn btn-outline-warning">
-                            <i class="fas fa-edit"></i> Edit
+                            Edit
                         </a>
+
+                        <!-- Delete button -->
+                        <a href="{% url 'events:delete' event.id %}" class="btn btn-outline-danger">
+                            Delete
+                        </a>
+                     </form>
                         {% endif %}
                     </div>
+
                 </div>
             </div>
         </div>

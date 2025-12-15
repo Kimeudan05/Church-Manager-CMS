@@ -15,9 +15,12 @@
                         <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">
                             Groups
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class="dropdown-menu bg-secondary-subtle">
+                           <li> <a href="{% url 'groups:list' %}" class="text-decoration-none ms-5 dropdown-item">
+                            All Groups
+                        </a></li>
                             {% for group in all_groups %}
-                            <li><a href="{% url 'groups:detail' group.id %}" class="dropdown-item"> {{group.name}} </a></li>
+                            <li><a href="{% url 'groups:detail' group.id %}" class="dropdown-item p-2"> {{group.name}} </a></li>
                             {% endfor %}
                         </ul>
                     </li>
@@ -28,51 +31,73 @@
             </ul>
 
             <ul class="navbar-nav">
-                {% if user.is_authenticated %}
-                <li class="nav-item dropdown">
-                    <a href="#" class="nav-link" role="button" data-bs-toggle="dropdown">
-                        <i class="fas fa-user"></i>{{user.get_full_name | default:user.username}}
+    {% if user.is_authenticated %}
+        <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">
+                <i class="fas fa-user"></i>
+                {{ user.get_full_name|default:user.username }}
+            </a>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+
+                {# DASHBOARD LOGIC #}
+                {% if user.is_staff %}
+                    <li>
+                        <a href="{% url 'dashboard:admin' %}" class="dropdown-item">
+                            Admin Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin:index' %}" class="dropdown-item">
+                            Admin Panel
+                        </a>
+                    </li>
+
+                {% elif user.church_role.role_type == "group_leader" %}
+
+                    <li>
+                        <a href="{% url 'dashboard:group_leader' %}" class="dropdown-item">
+                            Group Leader Dashboard
+                        </a>
+                    </li>
+
+                {% else %}
+                    <li>
+                        <a href="{% url 'dashboard:member' %}" class="dropdown-item">
+                            My Dashboard
+                        </a>
+                    </li>
+                {% endif %}
+
+                <li>
+                    <a href="{% url 'accounts:profile' %}" class="dropdown-item">
+                        My Profile
                     </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a href="{% url 'dashboard:member' %}" class="dropdown-item">My Dashboard</a></li>
-                        <li><a href="{% url 'accounts:profile' %}" class="dropdown-item">My Profile</a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
-                        {% if user.is_staff %}
-                        <li><a href="{% url 'admin:index' %}" class="dropdown-item">Admin Panel</a></li>
-                        <li><a href="{% url 'dashboard:member' %}" class="dropdown-item">Admin Dashboard</a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                      </li>
-                        {% endif %}
-
-                        <li>
-                        <form method="post" action="{% url 'accounts:logout' %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="dropdown-item" style="border:none; background:none; padding:0; cursor:pointer;">
-                            Logout
-                            </button>
-                        </form>
-                        </li>
-
-
-                    </ul>
-                  
-                         {% else %}
-                         <li class="nav-item">
-                            <a href="{% url 'accounts:login' %}" class="nav-link">Login</a>
-                         </li>
-                         <li class="nav-item">
-                            <a href="{% url 'accounts:register' %}" class="nav-link">Register</a>
-                         </li>
-                            {% endif %}
-                        
                 </li>
-                
-             
-             
+
+                <li><hr class="dropdown-divider"></li>
+
+                <li>
+                    <form method="post" action="{% url 'accounts:logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item">
+                            Logout
+                        </button>
+                    </form>
+                </li>
             </ul>
+        </li>
+
+        {% else %}
+        <li class="nav-item">
+            <a href="{% url 'accounts:login' %}" class="nav-link">Login</a>
+        </li>
+        <li class="nav-item">
+            <a href="{% url 'accounts:register' %}" class="nav-link">Register</a>
+        </li>
+    {% endif %}
+</ul>
+
         </div>
     </div>
 

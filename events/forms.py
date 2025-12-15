@@ -218,36 +218,47 @@ class EventRegistrationForm(forms.ModelForm):
         ).order_by("last_name", "first_name")
 
     def clean(self):
+        """
+        Form-level validation and normalization.
+
+        Validates event dates, registration rules,
+        and normalizes group-related fields for church-wide events.
+        """
+
         cleaned_data = super().clean()
-        event = cleaned_data.get("event")
-        member = cleaned_data.get("member")
 
-        if event and member:
-            # Check if already registered
-            if EventRegistration.objects.filter(event=event, member=member).exists():
-                if not self.instance.pk:  # Only for new registrations
-                    raise ValidationError(
-                        f"{member.get_full_name()} is already registered for this event."
-                    )
+        # Extract commonly used fields
+        start_datetime = cleaned_data.get("start_datetime")
+        end_datetime = cleaned_data.get("end_datetime")
+        registration_deadline = cleaned_data.get("registration_deadline")
+        is_church_wide = cleaned_data.get("is_church_wide")
+        requires_registration = cleaned_data.get("requires_registration")
 
-            # Check if event requires registration
-            if not event.requires_registration:
-                raise ValidationError("This event does not require registration.")
+        # Validate event date order
+        if start_datetime and end_datetime and end_datetime <= start_datetime:
+            raise ValidationError("End date/time must be after start date/time.")
 
-            # Check registration deadline
-            if (
-                event.registration_deadline
-                and timezone.now() > event.registration_deadline
-            ):
-                raise ValidationError("Registration deadline has passed.")
+        # Validate registration deadline timing
+        if (
+            registration_deadline
+            and start_datetime
+            and registration_deadline >= start_datetime
+        ):
+            raise ValidationError(
+                "Registration deadline must be before the event start time."
+            )
 
-            # Check capacity
-            if event.capacity:
-                current_registrations = EventRegistration.objects.filter(
-                    event=event
-                ).count()
-                if current_registrations >= event.capacity:
-                    raise ValidationError("Event has reached maximum capacity.")
+        # Normalize data for church-wide events
+        if is_church_wide:
+            cleaned_data["assigned_to"] = None
+            cleaned_data["allowed_groups"] = []
+            cleaned_data["allowed_members"] = []
+
+        # Validate registration requirements
+        if requires_registration and not registration_deadline:
+            raise ValidationError(
+                "Registration deadline is required when registration is enabled."
+            )
 
         return cleaned_data
 

@@ -87,4 +87,10 @@ class GroupLeaderDashboardView(LoginRequiredMixin, TemplateView):
         total_members = Membership.objects.filter(group_id__in=group_ids).count()
         context["total_group_members"] = total_members
 
+        # Average per group
+        group_count = my_groups.count()
+        context["average_members_per_group"] = (
+            total_members // group_count if group_count > 0 else 0
+        )
+
         return context

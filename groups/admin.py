@@ -9,7 +9,6 @@ class MembershipInline(admin.TabularInline):
     extra = 0
     fields = ["member", "is_primary", "role", "date_joined"]
     readonly_fields = ["date_joined"]
-    raw_id_fields = ["member"]
 
 
 class ChurchGroupAdmin(admin.ModelAdmin):

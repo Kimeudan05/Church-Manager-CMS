@@ -37,14 +37,13 @@
                 
                 <form method="post" novalidate>
                     {% csrf_token %}
-                    
                     {{ form|crispy }}
-                    
-                    <div class="alert alert-info">
+
+                    <div class="alert alert-info mt-3">
                         <i class="fas fa-info-circle"></i>
                         <strong>Note:</strong> Setting this as primary will automatically remove the primary status from any other groups this member belongs to.
                     </div>
-                    
+
                     <div class="d-grid gap-2 mt-4">
                         <button type="submit" class="btn btn-warning">
                             <i class="fas fa-save"></i> Update Membership

@@ -45,32 +45,30 @@ class ChurchGroupForm(forms.ModelForm):
         return leaders
 
 
-class MembershipForm(forms.ModelForm):
-    """Form for adding/editing group memberships"""
+class AddMembershipForm(forms.ModelForm):
+    """Form for adding a member to a group"""
 
     class Meta:
         model = Membership
         fields = ["member", "group", "is_primary", "role"]
         widgets = {
             "member": forms.Select(attrs={"class": "form-control"}),
-            "group": forms.Select(attrs={"class": "form-control"}),
+            "group": forms.HiddenInput(),
             "is_primary": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "role": forms.TextInput(
                 attrs={
                     "class": "form-control",
-                    "placeholder": "Role in group ... (Chairman, Treasurer, Secretary,Member ..)",
+                    "placeholder": "Role in group ... (Chairman, Treasurer, Secretary, Member ..)",
                 }
             ),
         }
 
     def __init__(self, *args, **kwargs):
         group = kwargs.pop("group", None)
-        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
 
-        # filter members based on context
         if group:
-            # For adding members to a specific group
+            # Show only active users not already in this group
             existing_members = Membership.objects.filter(group=group).values_list(
                 "member", flat=True
             )
@@ -82,17 +80,6 @@ class MembershipForm(forms.ModelForm):
                 .order_by("last_name", "first_name")
             )
             self.fields["group"].initial = group
-            self.fields["group"].widget = forms.HiddenInput()
-        elif user and hasattr(user, "church_role"):
-            # for group leaders -show only their groups
-            if user.church_role.role_type == "group_leaders":
-                self.fields["group"].queryset = user.leading_groups.all()
-
-        # filter members to only active members
-        if not group:
-            self.fields["member"].queryset = CustomUser.objects.filter(
-                is_active=True
-            ).order_by("last_name", "first_name")
 
     def clean(self):
         cleaned_data = super().clean()
@@ -100,22 +87,46 @@ class MembershipForm(forms.ModelForm):
         group = cleaned_data.get("group")
 
         if member and group:
-            # check if a member already in this group
+            # check if already in this group
             if Membership.objects.filter(member=member, group=group).exists():
-                if not self.instance.pk:  # Only for new memberships
-                    raise ValidationError(
-                        f"{member.get_full_name()} is already a member of the group {group.name}."
-                    )
+                raise ValidationError(
+                    f"{member.get_full_name()} is already in {group.name}."
+                )
 
-            # check max of 3 groups per member
-            if not self.instance.pk:  # Only for new memberships
-                member_groups_count = Membership.objects.filter(member=member).count()
-                if member_groups_count >= 3:
-                    raise ValidationError(
-                        f"{member.get_full_name()} already belongs to 3 groups (maximum allowed)."
-                    )
+            # max 3 groups per member
+            if Membership.objects.filter(member=member).count() >= 3:
+                raise ValidationError(
+                    f"{member.get_full_name()} already belongs to 3 groups."
+                )
 
         return cleaned_data
+
+
+class UpdateMembershipForm(forms.ModelForm):
+    """Form for updating membership (member not editable)"""
+
+    class Meta:
+        model = Membership
+        fields = ["member", "group", "is_primary", "role"]
+        widgets = {
+            "member": forms.TextInput(
+                attrs={"class": "form-control", "readonly": "readonly"}
+            ),
+            "group": forms.HiddenInput(),
+            "is_primary": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "role": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Role in group ... (Chairman, Treasurer, Secretary, Member ..)",
+                }
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # make member field read-only (display current member)
+        self.fields["member"].disabled = True
+        self.fields["member"].initial = self.instance.member.get_full_name()
 
 
 class UserRoleForm(forms.ModelForm):
