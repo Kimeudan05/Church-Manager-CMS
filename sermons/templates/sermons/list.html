@@ -1,0 +1,316 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Sermons - Church CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-book-bible"></i> Sermon Library
+    </h1>
+    
+    {% if user.is_authenticated and can_upload %}
+    <a href="{% url 'sermons:create' %}" class="btn btn-primary">
+        <i class="fas fa-upload"></i> Upload Sermon
+    </a>
+    {% endif %}
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_sermons }}</h3>
+                <p class="mb-0">Total Sermons</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ recent_sermons }}</h3>
+                <p class="mb-0">Recent (30 days)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_preachers }}</h3>
+                <p class="mb-0">Unique Preachers</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ sermon_types|length }}</h3>
+                <p class="mb-0">Sermon Types</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="fas fa-filter"></i> Filter Sermons
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-2">
+                {{ filter_form.preacher_type|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.sermon_type|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.start_date|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.end_date|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.has_media|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.search|as_crispy_field }}
+            </div>
+            <div class="col-md-12">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'sermons:list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-archive"></i> Archive
+                </h5>
+                <a href="{% url 'sermons:archive' %}" class="btn btn-light mt-2">
+                    <i class="fas fa-calendar-alt"></i> Browse Archive
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-layer-group"></i> Series
+                </h5>
+                {% if series_list %}
+                <div class="mt-2">
+                    {% for series in series_list|slice:":2" %}
+                    <a href="{% url 'sermons:series' series_name=series %}" class="badge bg-light text-dark me-1">
+                        {{ series }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-headphones"></i> Recent
+                </h5>
+                <p class="card-text">{{ recent_sermons }} new sermons</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sermons Grid -->
+<div class="row">
+    {% for sermon in sermons %}
+    <div class="col-md-4 mb-4">
+        <div class="card shadow h-100">
+            {% if sermon.thumbnail_image %}
+            <img src="{{ sermon.thumbnail_image.url }}" class="card-img-top" alt="{{ sermon.title }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <div class="card-img-top bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                <i class="fas fa-book-bible fa-3x"></i>
+            </div>
+            {% endif %}
+            
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{% url 'sermons:detail' sermon.pk %}" class="text-decoration-none">
+                        {{ sermon.title|truncatechars:50 }}
+                    </a>
+                </h5>
+                
+                <div class="mb-2">
+                    <span class="badge bg-{{ sermon.sermon_type|yesno:'primary,success,info,warning,secondary' }}">
+                        {{ sermon.get_sermon_type_display }}
+                    </span>
+                    {% if sermon.is_recent %}
+                    <span class="badge bg-success">New</span>
+                    {% endif %}
+                </div>
+                
+                <p class="card-text">
+                    <i class="fas fa-user"></i> 
+                    <strong>Preacher:</strong> {{ sermon.get_preacher_name }}
+                </p>
+                
+                <p class="card-text">
+                    <i class="fas fa-calendar"></i> 
+                    <strong>Date:</strong> {{ sermon.sermon_date|date:"F d, Y" }}
+                </p>
+                
+                {% if sermon.scripture_reference %}
+                <p class="card-text">
+                    <i class="fas fa-book"></i> 
+                    <strong>Scripture:</strong> {{ sermon.formatted_scripture|truncatechars:30 }}
+                </p>
+                {% endif %}
+                
+                {% if sermon.series %}
+                <p class="card-text">
+                    <i class="fas fa-layer-group"></i> 
+                    <strong>Series:</strong> {{ sermon.series }}
+                    {% if sermon.series_part %}
+                    (Part {{ sermon.series_part }})
+                    {% endif %}
+                </p>
+                {% endif %}
+                
+                {% if sermon.summary %}
+                <p class="card-text small text-muted">
+                    {{ sermon.summary|truncatechars:100 }}
+                </p>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        {% if sermon.has_media %}
+                        <small class="text-muted">
+                            <i class="fas fa-file-audio"></i> {{ sermon.get_media_count }} media
+                        </small>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="btn-group">
+                        <a href="{% url 'sermons:detail' sermon.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        
+                        {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' %}
+                        <a href="{% url 'sermons:update' sermon.pk %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No sermons found matching your criteria.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                Previous
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                Next
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Sermon Types Overview -->
+<div class="card shadow mt-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-chart-pie"></i> Sermon Types Overview
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for type in sermon_types %}
+            <div class="col-md-4 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>{{ type.sermon_type|title }}</span>
+                    <span class="badge bg-primary">{{ type.count }}</span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar" style="width: {% widthratio type.count total_sermons 100 %}%"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates for filter
+    const startDateField = document.querySelector('#id_start_date');
+    const endDateField = document.querySelector('#id_end_date');
+    
+    if (startDateField && !startDateField.value) {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        startDateField.value = oneYearAgo.toISOString().split('T')[0];
+    }
+    
+    if (endDateField && !endDateField.value) {
+        const today = new Date().toISOString().split('T')[0];
+        endDateField.value = today;
+    }
+});
+</script>
+{% endblock %}

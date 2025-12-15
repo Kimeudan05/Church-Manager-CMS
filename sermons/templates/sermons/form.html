@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title|default:"Sermon Form" }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-{% if submit_text == 'Upload Sermon' %}upload{% else %}edit{% endif %}"></i> 
+                    {{ title|default:"Sermon Form" }}
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information Card -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle"></i> Basic Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.title|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.preacher|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.guest_speaker_name|as_crispy_field }}
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle"></i> 
+                                        Use only if preacher is not a registered member
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.sermon_date|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.sermon_type|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Content Card -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-file-alt"></i> Content
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.scripture_reference|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.summary|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.full_notes|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Media Files Card -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-file-audio"></i> Media Files (Optional)
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.thumbnail_image|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.audio_file|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.video_url|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <div class="row">
+                                        <div class="col-12 mb-3">
+                                            {{ form.slides_file|as_crispy_field }}
+                                        </div>
+                                        <div class="col-12">
+                                            {{ form.handout_file|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Series & Metadata Card -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-layer-group"></i> Series & Metadata
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.series|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.series_part|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.tags|as_crispy_field }}
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    {{ form.duration_minutes|as_crispy_field }}
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    {{ form.attendance_count|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Errors -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Please fix the errors below:</h5>
+                        <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if object %}{% url 'sermons:detail' object.pk %}{% else %}{% url 'sermons:list' %}{% endif %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        
+                        <div class="btn-group">
+                            <button type="submit" name="save" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ submit_text|default:"Save Sermon" }}
+                            </button>
+                            
+                            {% if not object %}
+                            <button type="submit" name="save_and_add_another" class="btn btn-outline-primary">
+                                <i class="fas fa-plus"></i> Save & Add Another
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show/hide guest speaker field based on preacher selection
+    const preacherField = document.querySelector('#id_preacher');
+    const guestSpeakerField = document.querySelector('#id_guest_speaker_name');
+    
+    function updateGuestSpeakerField() {
+        if (preacherField.value) {
+            guestSpeakerField.disabled = true;
+            guestSpeakerField.placeholder = "Disabled when preacher is selected";
+            guestSpeakerField.closest('.form-group').classList.add('text-muted');
+        } else {
+            guestSpeakerField.disabled = false;
+            guestSpeakerField.placeholder = "Enter guest preacher name";
+            guestSpeakerField.closest('.form-group').classList.remove('text-muted');
+        }
+    }
+    
+    if (preacherField && guestSpeakerField) {
+        preacherField.addEventListener('change', updateGuestSpeakerField);
+        updateGuestSpeakerField(); // Initial state
+    }
+    
+    // Set default sermon date to today if empty
+    const sermonDateField = document.querySelector('#id_sermon_date');
+    if (sermonDateField && !sermonDateField.value) {
+        const today = new Date().toISOString().split('T')[0];
+        sermonDateField.value = today;
+    }
+    
+    // File size validation
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fileInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const fileSize = file.size / 1024 / 1024; // MB
+                const maxSize = 50; // 50MB
+                
+                if (fileSize > maxSize) {
+                    alert(`File size (${fileSize.toFixed(2)}MB) exceeds maximum (${maxSize}MB)`);
+                    this.value = '';
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

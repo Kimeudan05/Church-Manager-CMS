@@ -1,0 +1,336 @@
+{% extends 'base.html' %}
+
+{% block title %}Sermon Archive - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <!-- Archive Navigation -->
+        <div class="card shadow sticky-top" style="top: 20px;">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt"></i> Archive
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Years -->
+                <h6 class="border-bottom pb-2 mb-3">Browse by Year</h6>
+                <div class="list-group list-group-flush mb-4">
+                    <a href="{% url 'sermons:archive' %}" 
+                       class="list-group-item list-group-item-action {% if not current_year %}active{% endif %}">
+                        <i class="fas fa-calendar"></i> All Years
+                        <span class="badge bg-primary float-end">{{ total_sermons|default:0 }}</span>
+                    </a>
+                    
+                    {% for year_data in archive_years %}
+                    <a href="{% url 'sermons:archive_year' year=year_data.year %}" 
+                       class="list-group-item list-group-item-action {% if current_year == year_data.year %}active{% endif %}">
+                        <i class="fas fa-calendar"></i> {{ year_data.year }}
+                        <span class="badge bg-primary float-end">{{ year_data.count|default:0 }}</span>
+                    </a>
+                    {% empty %}
+                    <div class="list-group-item text-muted">
+                        <i class="fas fa-info-circle"></i> No archive data available
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Months (if year selected) -->
+                {% if current_year and archive_months %}
+                <h6 class="border-bottom pb-2 mb-3">{{ current_year }} - Months</h6>
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'sermons:archive_year' year=current_year %}" 
+                       class="list-group-item list-group-item-action {% if not current_month %}active{% endif %}">
+                        <i class="fas fa-calendar"></i> All Months
+                        <span class="badge bg-primary float-end">{{ total_for_year|default:0 }}</span>
+                    </a>
+                    
+                    {% for month in archive_months %}
+                    <a href="{% url 'sermons:archive_month' year=current_year month=month.number %}" 
+                       class="list-group-item list-group-item-action {% if current_month == month.number %}active{% endif %}">
+                        <i class="fas fa-calendar"></i> {{ month.name }}
+                        <span class="badge bg-primary float-end">{{ month.count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Quick Stats -->
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="border-bottom pb-2 mb-3">Archive Stats</h6>
+                    <div class="row text-center">
+                        <div class="col-6 mb-2">
+                            <div class="p-2 bg-light rounded">
+                                <div class="h5 mb-0">{{ archive_years|length }}</div>
+                                <small class="text-muted">Years</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="p-2 bg-light rounded">
+                                <div class="h5 mb-0">{{ sermons.count }}</div>
+                                <small class="text-muted">Sermons</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <a href="{% url 'sermons:list' %}" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="fas fa-arrow-left"></i> Back to Library
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1>
+                    <i class="fas fa-archive"></i> 
+                    Sermon Archive
+                    {% if current_year %}
+                        - {{ current_year }}
+                        {% if current_month_name %}
+                            - {{ current_month_name }}
+                        {% endif %}
+                    {% endif %}
+                </h1>
+
+                <p class="text-muted mb-0">
+                    Browse sermons by date
+                </p>
+            </div>
+            
+            <div>
+                <a href="{% url 'sermons:list' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-list"></i> Grid View
+                </a>
+            </div>
+        </div>
+        
+        <!-- Archive Summary -->
+        {% if current_year or current_month %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter"></i> Currently Viewing:
+                    {% if current_year and current_month_name %}
+                        {{ current_year }} - {{ current_month_name }}
+                    {% elif current_year %}
+                        {{ current_year }}
+                    {% endif %}
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <div class="h2 mb-0">{{ sermons.count }}</div>
+                            <small class="text-muted">Sermons</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <div class="h2 mb-0">{{ unique_preachers_count }}</div>
+                            <small class="text-muted">Unique Preachers</small>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded">
+                            <div class="h2 mb-0">{{ media_sermons_count }}</div>
+                            <small class="text-muted">With Media</small>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Sermon List -->
+        {% if sermons %}
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> 
+                    Sermons 
+                    <span class="badge bg-primary">{{ sermons.count }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Title</th>
+                                <th>Preacher</th>
+                                <th>Type</th>
+                                <th>Scripture</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sermon in sermons %}
+                            <tr>
+                                <td>
+                                    <strong>{{ sermon.sermon_date|date:"M d, Y" }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ sermon.sermon_date|date:"l" }}</small>
+                                </td>
+                                <td>
+                                    <a href="{% url 'sermons:detail' sermon.pk %}" class="text-decoration-none">
+                                        {{ sermon.title|truncatechars:40 }}
+                                    </a>
+                                    {% if sermon.series %}
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="fas fa-layer-group"></i> {{ sermon.series }}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ sermon.get_preacher_name }}</td>
+                                <td>
+                                    <span class="badge bg-{{ sermon.sermon_type|yesno:'primary,success,info,warning,secondary' }}">
+                                        {{ sermon.get_sermon_type_display|truncatechars:15 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if sermon.scripture_reference %}
+                                    <small>{{ sermon.formatted_scripture|truncatechars:25 }}</small>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'sermons:detail' sermon.pk %}" class="btn btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if user.is_staff %}
+                                        <a href="{% url 'sermons:update' sermon.pk %}" class="btn btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Group by Month (if viewing all months) -->
+                {% if current_year and not current_month %}
+                <div class="mt-5">
+                    <h5 class="border-bottom pb-2 mb-3">
+                        <i class="fas fa-calendar"></i> Sermons by Month in {{ current_year }}
+                    </h5>
+                    
+                    {% for month in archive_months %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                <i class="fas fa-calendar"></i> {{ month.name }}
+                                <span class="badge bg-primary ms-2">{{ month.count }} sermons</span>
+                            </h6>
+                            <a href="{% url 'sermons:archive_month' year=current_year month=month.number %}" 
+                               class="btn btn-sm btn-outline-primary">
+                                View All
+                            </a>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                {% for sermon in sermons %}
+                                {% if sermon.sermon_date.month == month.number %}
+                                {% if forloop.counter <= 3 %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        <div class="card-body">
+                                            <h6 class="card-title">
+                                                <a href="{% url 'sermons:detail' sermon.pk %}" class="text-decoration-none">
+                                                    {{ sermon.title|truncatechars:40 }}
+                                                </a>
+                                            </h6>
+                                            <p class="card-text small text-muted mb-1">
+                                                <i class="fas fa-user"></i> {{ sermon.get_preacher_name }}
+                                            </p>
+                                            <p class="card-text small text-muted">
+                                                <i class="fas fa-book"></i> 
+                                                {{ sermon.formatted_scripture|truncatechars:30 }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% endif %}
+                                {% endfor %}
+                                
+                                {% if month.count > 3 %}
+                                <div class="col-12 text-center mt-2">
+                                    <a href="{% url 'sermons:archive_month' year=current_year month=month.number %}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        View {{ month.count|add:"-3" }} more sermons
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% else %}
+        <div class="card shadow">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-archive fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Sermons Found</h4>
+                <p class="text-muted">
+                    {% if current_year %}
+                        No sermons found for 
+                        {% if current_month_name %}
+                            {{ current_month_name }} {{ current_year }}
+                        {% else %}
+                            {{ current_year }}
+                        {% endif %}
+                    {% else %}
+                        No sermons in the archive.
+                    {% endif %}
+                </p>
+
+                <a href="{% url 'sermons:list' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-arrow-left"></i> Back to Library
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Make table rows clickable
+    const tableRows = document.querySelectorAll('table.table-hover tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Don't trigger if clicking on buttons
+            if (!e.target.closest('button') && !e.target.closest('a')) {
+                const link = this.querySelector('a[href*="detail"]');
+                if (link) {
+                    window.location.href = link.href;
+                }
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

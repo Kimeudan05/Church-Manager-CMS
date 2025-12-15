@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Sermon - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-trash"></i> Delete Sermon
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Warning!</h5>
+                    <p class="mb-0">
+                        You are about to permanently delete this sermon. This action cannot be undone.
+                    </p>
+                </div>
+                
+                <!-- Sermon Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Sermon Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                {% if sermon.thumbnail_image %}
+                                <img src="{{ sermon.thumbnail_image.url }}" 
+                                     alt="{{ sermon.title }}" 
+                                     class="img-fluid rounded mb-3">
+                                {% else %}
+                                <div class="text-center p-4 bg-secondary rounded mb-3">
+                                    <i class="fas fa-book-bible fa-3x text-white"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <h5>{{ sermon.title }}</h5>
+                                <dl class="row">
+                                    <dt class="col-sm-4">Preacher:</dt>
+                                    <dd class="col-sm-8">{{ sermon.get_preacher_name }}</dd>
+                                    
+                                    <dt class="col-sm-4">Date:</dt>
+                                    <dd class="col-sm-8">{{ sermon.sermon_date|date:"F d, Y" }}</dd>
+                                    
+                                    <dt class="col-sm-4">Type:</dt>
+                                    <dd class="col-sm-8">{{ sermon.get_sermon_type_display }}</dd>
+                                    
+                                    <dt class="col-sm-4">Created:</dt>
+                                    <dd class="col-sm-8">{{ sermon.created_at|date:"M d, Y" }}</dd>
+                                    
+                                    <dt class="col-sm-4">Media Files:</dt>
+                                    <dd class="col-sm-8">{{ media_count }}</dd>
+                                    
+                                    {% if sermon.series %}
+                                    <dt class="col-sm-4">Series:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ sermon.series }}
+                                        {% if sermon.series_part %}
+                                        (Part {{ sermon.series_part }})
+                                        {% endif %}
+                                    </dd>
+                                    {% endif %}
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Media Files Summary -->
+                {% if sermon.has_media %}
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-circle"></i> Files to be Deleted
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group">
+                            {% if sermon.audio_file %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-file-audio text-primary"></i> 
+                                    Audio File
+                                </span>
+                                <span class="badge bg-primary rounded-pill">
+                                    <i class="fas fa-music"></i>
+                                </span>
+                            </li>
+                            {% endif %}
+                            
+                            {% if sermon.slides_file %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-file-powerpoint text-warning"></i> 
+                                    Slides File
+                                </span>
+                                <span class="badge bg-warning rounded-pill">
+                                    <i class="fas fa-presentation"></i>
+                                </span>
+                            </li>
+                            {% endif %}
+                            
+                            {% if sermon.handout_file %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-file-word text-info"></i> 
+                                    Handout File
+                                </span>
+                                <span class="badge bg-info rounded-pill">
+                                    <i class="fas fa-file-alt"></i>
+                                </span>
+                            </li>
+                            {% endif %}
+                            
+                            {% if sermon.thumbnail_image %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="fas fa-image text-success"></i> 
+                                    Thumbnail Image
+                                </span>
+                                <span class="badge bg-success rounded-pill">
+                                    <i class="fas fa-image"></i>
+                                </span>
+                            </li>
+                            {% endif %}
+                        </ul>
+                        <p class="text-muted mt-3 mb-0">
+                            <small>
+                                <i class="fas fa-info-circle"></i> 
+                                All associated files will be permanently deleted from the server.
+                            </small>
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Confirmation Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                        <label class="form-check-label text-danger" for="confirmDelete">
+                            <strong>I understand that this action cannot be undone.</strong>
+                        </label>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'sermons:detail' sermon.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancel
+                        </a>
+                        
+                        <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                            <i class="fas fa-trash"></i> Delete Sermon Permanently
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.querySelector('#confirmDelete');
+    const deleteButton = document.querySelector('#deleteButton');
+    
+    if (confirmCheckbox && deleteButton) {
+        confirmCheckbox.addEventListener('change', function() {
+            deleteButton.disabled = !this.checked;
+        });
+    }
+    
+    // Prevent accidental double-clicks
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            deleteButton.disabled = true;
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        });
+    }
+});
+</script>
+{% endblock %}

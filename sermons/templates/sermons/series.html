@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ series_name }} - Sermon Series - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <!-- Series Sidebar -->
+        <div class="card shadow sticky-top" style="top: 20px;">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-layer-group"></i> Sermon Series
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Current Series -->
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2 mb-3">Current Series</h6>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item active bg-primary text-white">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <strong>{{ series_name }}</strong>
+                                <span class="badge bg-light text-primary">{{ series_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- All Series -->
+                <div class="mb-4">
+                    <h6 class="border-bottom pb-2 mb-3">All Series</h6>
+                    <div class="list-group list-group-flush">
+                        {% for series in all_series %}
+                        <a href="{% url 'sermons:series' series_name=series %}" 
+                           class="list-group-item list-group-item-action {% if series == series_name %}active{% endif %} d-flex justify-content-between align-items-center">
+                            {{ series|truncatechars:20 }}
+                            <span class="badge bg-primary rounded-pill">
+                                {{ series_count }}
+                            </span>
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item text-muted">
+                            <i class="fas fa-info-circle"></i> No other series available
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Series Stats -->
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="border-bottom pb-2 mb-3">Series Stats</h6>
+                    <div class="row text-center">
+                        <div class="col-6 mb-2">
+                            <div class="p-2 bg-light rounded">
+                                <div class="h5 mb-0">{{ series_count }}</div>
+                                <small class="text-muted">Sermons</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-2">
+                            <div class="p-2 bg-light rounded">
+                                <div class="h5 mb-0">{{ all_series|length }}</div>
+                                <small class="text-muted">Total Series</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <a href="{% url 'sermons:list' %}" class="btn btn-outline-primary btn-sm w-100">
+                    <i class="fas fa-arrow-left"></i> Back to Library
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <!-- Series Header -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">
+                            <i class="fas fa-layer-group"></i> {{ series_name }}
+                        </h3>
+                        <p class="mb-0 mt-1">
+                            <i class="fas fa-book-bible"></i> Sermon Series
+                        </p>
+                    </div>
+                    <span class="badge bg-light text-primary fs-6">
+                        {{ series_count }} Sermons
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Series Description (if available) -->
+                {% if series_description %}
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> About This Series</h5>
+                    <p class="mb-0">{{ series_description }}</p>
+                </div>
+                {% else %}
+                <p class="text-muted">
+                    <i class="fas fa-info-circle"></i> 
+                    No description available for this series.
+                </p>
+                {% endif %}
+                
+                <!-- Series Progress -->
+                <div class="progress mb-4" style="height: 10px;">
+                    {% with completed=series_count|default:0 total=series_count|default:1 %}
+                    <div class="progress-bar bg-success" style="width: {% widthratio completed total 100 %}%"></div>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sermons in Series -->
+        {% if sermons %}
+        <div class="row">
+            {% for sermon in sermons %}
+            <div class="col-md-6 mb-4">
+                <div class="card shadow h-100 {% if sermon.series_part %}border-start border-5 border-primary{% endif %}">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0">
+                                {% if sermon.series_part %}
+                                <span class="badge bg-primary me-2">Part {{ sermon.series_part }}</span>
+                                {% endif %}
+                                {{ sermon.title|truncatechars:50 }}
+                            </h6>
+                            <span class="badge bg-{{ sermon.sermon_type|yesno:'primary,success,info,warning,secondary' }}">
+                                {{ sermon.get_sermon_type_display|truncatechars:10 }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                {% if sermon.thumbnail_image %}
+                                <img src="{{ sermon.thumbnail_image.url }}" 
+                                     alt="{{ sermon.title }}" 
+                                     class="img-fluid rounded"
+                                     style="height: 120px; object-fit: cover;">
+                                {% else %}
+                                <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded" 
+                                     style="height: 120px;">
+                                    <i class="fas fa-book-bible fa-2x"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-8">
+                                <p class="mb-2">
+                                    <i class="fas fa-user"></i> 
+                                    <strong>Preacher:</strong> {{ sermon.get_preacher_name }}
+                                </p>
+                                <p class="mb-2">
+                                    <i class="fas fa-calendar"></i> 
+                                    <strong>Date:</strong> {{ sermon.sermon_date|date:"M d, Y" }}
+                                </p>
+                                {% if sermon.scripture_reference %}
+                                <p class="mb-2">
+                                    <i class="fas fa-book"></i> 
+                                    <strong>Scripture:</strong> 
+                                    <small>{{ sermon.formatted_scripture|truncatechars:30 }}</small>
+                                </p>
+                                {% endif %}
+                                
+                                {% if sermon.summary %}
+                                <p class="small text-muted mt-2">
+                                    {{ sermon.summary|truncatechars:80 }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if sermon.has_media %}
+                                <small class="text-muted">
+                                    <i class="fas fa-file-audio"></i> 
+                                    {{ sermon.get_media_count }} media files
+                                </small>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'sermons:detail' sermon.pk %}" class="btn btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                                {% if user.is_staff %}
+                                <a href="{% url 'sermons:update' sermon.pk %}" class="btn btn-outline-warning">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Series Timeline View -->
+        <div class="card shadow mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-stream"></i> Series Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for sermon in sermons|dictsort:"sermon_date" %}
+                    <div class="timeline-item {% cycle 'left' 'right' %}">
+                        <div class="timeline-date">
+                            {{ sermon.sermon_date|date:"M d, Y" }}
+                            {% if sermon.series_part %}
+                            <span class="badge bg-primary">Part {{ sermon.series_part }}</span>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-content card">
+                            <div class="card-body">
+                                <h6 class="card-title">
+                                    <a href="{% url 'sermons:detail' sermon.pk %}" class="text-decoration-none">
+                                        {{ sermon.title }}
+                                    </a>
+                                </h6>
+                                <p class="card-text small text-muted mb-2">
+                                    <i class="fas fa-user"></i> {{ sermon.get_preacher_name }}
+                                </p>
+                                {% if sermon.scripture_reference %}
+                                <p class="card-text small">
+                                    <i class="fas fa-book"></i> {{ sermon.formatted_scripture|truncatechars:40 }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card shadow">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-layer-group fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Sermons in Series</h4>
+                <p class="text-muted">
+                    No sermons found for the series "{{ series_name }}".
+                </p>
+                <a href="{% url 'sermons:list' %}" class="btn btn-primary mt-3">
+                    <i class="fas fa-arrow-left"></i> Back to Library
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Timeline Styles */
+.timeline {
+    position: relative;
+    padding-left: 0;
+    list-style: none;
+}
+
+.timeline:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background-color: #dee2e6;
+    transform: translateX(-50%);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+    width: 50%;
+    padding-right: 30px;
+    box-sizing: border-box;
+}
+
+.timeline-item.right {
+    margin-left: 50%;
+    padding-left: 30px;
+    padding-right: 0;
+}
+
+.timeline-item:before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: -6px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #007bff;
+    border: 2px solid white;
+    box-shadow: 0 0 0 3px #007bff;
+}
+
+.timeline-item.right:before {
+    right: auto;
+    left: -6px;
+}
+
+.timeline-content {
+    position: relative;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.timeline-date {
+    font-weight: bold;
+    color: #6c757d;
+    margin-bottom: 10px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sort sermons by series part
+    const sortSelect = document.createElement('select');
+    sortSelect.className = 'form-select form-select-sm';
+    sortSelect.innerHTML = `
+        <option value="date">Sort by Date</option>
+        <option value="part">Sort by Part Number</option>
+    `;
+    
+    const header = document.querySelector('.card-header.bg-primary.text-white .d-flex');
+    if (header) {
+        header.appendChild(sortSelect);
+        
+        sortSelect.addEventListener('change', function() {
+            const value = this.value;
+            // Implement sorting logic here
+            console.log('Sort by:', value);
+        });
+    }
+});
+</script>
+{% endblock %}

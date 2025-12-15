@@ -59,6 +59,15 @@
               </div>
               {% endif %} {{ form.profile_picture|as_crispy_field }}
             </div>
+
+            <div class="col-md-6">
+              <h5 class="text-primary mb-3">
+                  <i class="fas fa-phone-alt"></i> Emergency Contact
+              </h5>
+              {{ form.emergency_contact|as_crispy_field }} <br />
+              {{ form.emergency_contact_phone|as_crispy_field }}
+            </div>
+
           </div>
 
           <div class="d-grid gap-2 mt-4">

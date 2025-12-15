@@ -1,0 +1,442 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ sermon.title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Sermon Header -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-book-bible"></i> {{ sermon.title }}
+                    </h3>
+                    <span class="badge bg-light text-dark">
+                        {{ sermon.get_sermon_type_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- Sermon Thumbnail -->
+                {% if sermon.thumbnail_image %}
+                <div class="text-center mb-4">
+                    <img src="{{ sermon.thumbnail_image.url }}" 
+                         alt="{{ sermon.title }}" 
+                         class="img-fluid rounded" 
+                         style="max-height: 300px;">
+                </div>
+                {% endif %}
+                
+                <!-- Sermon Details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-info-circle"></i> Sermon Information</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Preacher:</dt>
+                            <dd class="col-sm-8">
+                                {{ sermon.get_preacher_name }}
+                                {% if sermon.preacher %}
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-user"></i> Church Member
+                                </small>
+                                {% else %}
+                                <small class="text-muted d-block">
+                                    <i class="fas fa-user-plus"></i> Guest Speaker
+                                </small>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Date:</dt>
+                            <dd class="col-sm-8">{{ sermon.sermon_date|date:"l, F d, Y" }}</dd>
+                            
+                            <dt class="col-sm-4">Duration:</dt>
+                            <dd class="col-sm-8">
+                                {% if sermon.duration_minutes %}
+                                {{ sermon.duration_minutes }} minutes
+                                {% else %}
+                                <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Attendance:</dt>
+                            <dd class="col-sm-8">
+                                {% if sermon.attendance_count %}
+                                {{ sermon.attendance_count }} people
+                                {% else %}
+                                <span class="text-muted">Not recorded</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-book"></i> Scripture & Series</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Scripture:</dt>
+                            <dd class="col-sm-8">
+                                {% if sermon.scripture_reference %}
+                                <strong>{{ sermon.formatted_scripture }}</strong>
+                                {% else %}
+                                <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </dd>
+                            
+                            {% if sermon.series %}
+                            <dt class="col-sm-4">Series:</dt>
+                            <dd class="col-sm-8">
+                                <a href="{% url 'sermons:series' series_name=sermon.series %}" class="text-decoration-none">
+                                    {{ sermon.series }}
+                                </a>
+                                {% if sermon.series_part %}
+                                <span class="badge bg-info ms-1">Part {{ sermon.series_part }}</span>
+                                {% endif %}
+                            </dd>
+                            {% endif %}
+                            
+                            <dt class="col-sm-4">Tags:</dt>
+                            <dd class="col-sm-8">
+                                {% if sermon.tags_list %}
+                                {% for tag in sermon.tags_list %}
+                                <span class="badge bg-secondary me-1">{{ tag }}</span>
+                                {% endfor %}
+                                {% else %}
+                                <span class="text-muted">No tags</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Uploaded:</dt>
+                            <dd class="col-sm-8">
+                                {{ sermon.created_at|date:"M d, Y" }}
+                                {% if sermon.created_by %}
+                                <br>
+                                <small class="text-muted">
+                                    by {{ sermon.created_by.get_full_name|default:sermon.created_by.username }}
+                                </small>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                <!-- Sermon Summary -->
+                {% if sermon.summary %}
+                <div class="mb-4">
+                    <h5><i class="fas fa-file-alt"></i> Summary</h5>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            {{ sermon.summary|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Full Notes -->
+                {% if sermon.full_notes %}
+                <div class="mb-4">
+                    <h5><i class="fas fa-sticky-note"></i> Full Notes</h5>
+                    <div class="card">
+                        <div class="card-body">
+                            {{ sermon.full_notes|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Media Section -->
+        {% if sermon.has_media %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-file-audio"></i> Sermon Media
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <!-- Audio -->
+                    {% if sermon.audio_file %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-volume-up"></i> Audio
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <audio controls class="w-100">
+                                    <source src="{{ sermon.audio_file.url }}" type="audio/mpeg">
+                                    Your browser does not support the audio element.
+                                </audio>
+                                <div class="mt-2">
+                                    <a href="{% url 'sermons:download' pk=sermon.pk file_type='audio' %}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-download"></i> Download Audio
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Video -->
+                    {% if sermon.video_url %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-video"></i> Video
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="ratio ratio-16x9">
+                                    {% if youtube_id %}
+                                        <!-- YouTube Embed -->
+                                        <iframe src="https://www.youtube.com/embed/{{ youtube_id }}" frameborder="0" allowfullscreen></iframe>
+                                    {% elif vimeo_id %}
+                                        <!-- Vimeo Embed -->
+                                        <iframe 
+                                            src="https://player.vimeo.com/video/{{ vimeo_id }}" 
+                                            frameborder="0" 
+                                            allowfullscreen>
+                                        </iframe>
+                                    {% elif sermon.video_url %}
+                                        <!-- Fallback: Direct link -->
+                                        <a href="{{ sermon.video_url }}" target="_blank" class="btn btn-primary">
+                                            <i class="fas fa-external-link-alt"></i> Watch Video
+                                        </a>
+                                    {% else %}
+                                        <!-- No video available -->
+                                        <p class="text-muted">No video available for this sermon.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                    {% else %}
+                    <p>No url provided</p>
+                    {% endif %}
+                    
+                    <!-- Slides -->
+                    {% if sermon.slides_file %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-file-powerpoint"></i> Slides
+                                </h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-pdf fa-3x text-warning mb-3"></i>
+                                <p class="card-text">Presentation slides available for download</p>
+                                <a href="{% url 'sermons:download' pk=sermon.pk file_type='slides' %}" 
+                                   class="btn btn-warning">
+                                    <i class="fas fa-download"></i> Download Slides
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Handout -->
+                    {% if sermon.handout_file %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-file-alt"></i> Handout
+                                </h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-word fa-3x text-info mb-3"></i>
+                                <p class="card-text">Sermon handout available for download</p>
+                                <a href="{% url 'sermons:download' pk=sermon.pk file_type='handout' %}" 
+                                   class="btn btn-info">
+                                    <i class="fas fa-download"></i> Download Handout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Related Sermons -->
+        {% if related_sermons %}
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-random"></i> Related Sermons
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for related in related_sermons %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6>
+                                    <a href="{% url 'sermons:detail' related.pk %}" class="text-decoration-none">
+                                        {{ related.title|truncatechars:40 }}
+                                    </a>
+                                </h6>
+                                <p class="small text-muted mb-1">
+                                    <i class="fas fa-user"></i> {{ related.get_preacher_name }}
+                                </p>
+                                <p class="small text-muted mb-2">
+                                    <i class="fas fa-calendar"></i> {{ related.sermon_date|date:"M d, Y" }}
+                                </p>
+                                <a href="{% url 'sermons:detail' related.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'sermons:list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Library
+                    </a>
+                    
+                    {% if can_edit %}
+                    <a href="{% url 'sermons:update' sermon.pk %}" class="btn btn-outline-warning">
+                        <i class="fas fa-edit"></i> Edit Sermon
+                    </a>
+                    {% endif %}
+                    
+                    {% if can_delete %}
+                    <a href="{% url 'sermons:delete' sermon.pk %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> Delete Sermon
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'sermons:archive' %}" class="btn btn-outline-info">
+                        <i class="fas fa-archive"></i> Browse Archive
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Media Statistics -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> Media Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-4">{{ media_count }}</div>
+                    <p class="text-muted">Available Media Files</p>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="p-2">
+                            {% if sermon.audio_file %}
+                            <i class="fas fa-volume-up fa-2x text-success"></i>
+                            <p class="mt-2 mb-0">Audio</p>
+                            {% else %}
+                            <i class="fas fa-volume-mute fa-2x text-secondary"></i>
+                            <p class="mt-2 mb-0 text-muted">No Audio</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2">
+                            {% if sermon.video_url %}
+                            <i class="fas fa-video fa-2x text-danger"></i>
+                            <p class="mt-2 mb-0">Video</p>
+                            {% else %}
+                            <i class="fas fa-video-slash fa-2x text-secondary"></i>
+                            <p class="mt-2 mb-0 text-muted">No Video</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Share Sermon -->
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-share-alt"></i> Share This Sermon
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <p class="small text-muted">Share this sermon with others</p>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary btn-sm" onclick="shareSermon('facebook')">
+                        <i class="fab fa-facebook"></i>
+                    </button>
+                    <button class="btn btn-outline-info btn-sm" onclick="shareSermon('twitter')">
+                        <i class="fab fa-twitter"></i>
+                    </button>
+                    <button class="btn btn-outline-success btn-sm" onclick="shareSermon('whatsapp')">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="copySermonLink()">
+                        <i class="fas fa-link"></i> Copy Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function shareSermon(platform) {
+    const url = window.location.href;
+    const title = "{{ sermon.title }}";
+    const text = "Check out this sermon: {{ sermon.title }} by {{ sermon.get_preacher_name }}";
+    
+    let shareUrl = '';
+    
+    switch(platform) {
+        case 'facebook':
+            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+            break;
+        case 'twitter':
+            shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+            break;
+        case 'whatsapp':
+            shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+            break;
+    }
+    
+    if (shareUrl) {
+        window.open(shareUrl, '_blank', 'width=600,height=400');
+    }
+}
+
+function copySermonLink() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        alert('Sermon link copied to clipboard!');
+    });
+}
+</script>
+{% endblock %}

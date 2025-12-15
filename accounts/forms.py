@@ -8,7 +8,7 @@ class CustomUserCreationForm(UserCreationForm):
     """Form for creating new users in admin"""
 
     email = forms.EmailField(required=True)
-    phone = forms.CharField(max_length=20, required=True)
+    phone = forms.CharField(required=True)
 
     class Meta:
         model = CustomUser
@@ -16,8 +16,19 @@ class CustomUserCreationForm(UserCreationForm):
 
     def clean_phone(self):
         phone = self.cleaned_data.get("phone")
+
+        # Ensure only digits
+        if not phone.isdigit():
+            raise forms.ValidationError("Phone number must contain only digits.")
+
+        # Ensure length is between 10 and 12
+        if not 10 <= len(phone) <= 12:
+            raise forms.ValidationError("Phone number must be 10-12 digits long.")
+
+        # Ensure uniqueness
         if CustomUser.objects.filter(phone=phone).exists():
-            raise ValidationError("A user with this phone number already exists.")
+            raise forms.ValidationError("A user with this phone number already exists.")
+
         return phone
 
     def clean_email(self):
@@ -124,12 +135,23 @@ class ProfileUpdateForm(forms.ModelForm):
             "profile_picture",
             "occupation",
             "marital_status",
+            "emergency_contact",  # Add the name
+            "emergency_contact_phone",
         )
         widgets = {
             "first_name": forms.TextInput(attrs={"class": "form-control"}),
             "last_name": forms.TextInput(attrs={"class": "form-control"}),
             "email": forms.EmailInput(attrs={"class": "form-control"}),
-            "phone": forms.TextInput(attrs={"class": "form-control"}),
+            "phone": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "autocomplete": "tel",
+                    "pattern": "[0-9]+",
+                    "maxlength": "12",
+                    "placeholder": "0788XXXXXX",
+                    "title": "Enter digits only",
+                }
+            ),
             "address": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
             "date_of_birth": forms.DateInput(
                 attrs={"class": "form-control", "type": "date"}, format="%Y-%m-%d"
@@ -137,8 +159,42 @@ class ProfileUpdateForm(forms.ModelForm):
             "occupation": forms.TextInput(attrs={"class": "form-control"}),
             "marital_status": forms.Select(attrs={"class": "form-control"}),
             "profile_picture": forms.FileInput(attrs={"class": "form-control"}),
+            "emergency_contact": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "placeholder": "Name of who to contact incase of emergency",
+                }
+            ),
+            "emergency_contact_phone": forms.TextInput(
+                attrs={
+                    "class": "form-control",
+                    "class": "form-control",
+                    "autocomplete": "tel",
+                    "pattern": "[0-9]+",
+                    "maxlength": "12",
+                    "placeholder": "0788XXXXXX",
+                    "title": "Enter digits only",
+                }
+            ),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["email"].required = True
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get("phone")
+
+        # Ensure only digits
+        if not phone.isdigit():
+            raise forms.ValidationError("Phone number must contain only digits.")
+
+        # Ensure length is between 10 and 12
+        if not 10 <= len(phone) <= 12:
+            raise forms.ValidationError("Phone number must be 10-12 digits long.")
+
+        # Ensure uniqueness
+        if CustomUser.objects.filter(phone=phone).exists():
+            raise forms.ValidationError("A user with this phone number already exists.")
+
+        return phone
