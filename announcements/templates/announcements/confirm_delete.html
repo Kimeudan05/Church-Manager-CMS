@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Announcement - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-trash"></i> Delete Announcement
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Warning!</h5>
+                    <p class="mb-0">
+                        You are about to permanently delete the announcement <strong>"{{ announcement.title }}"</strong>.
+                        This action cannot be undone.
+                    </p>
+                </div>
+                
+                <!-- Announcement Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Announcement Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5>{{ announcement.title }}</h5>
+                                <dl class="row">
+                                    <dt class="col-sm-4">Author:</dt>
+                                    <dd class="col-sm-8">
+                                        {{ announcement.author.get_full_name|default:announcement.author.username }}
+                                    </dd>
+                                    
+                                    <dt class="col-sm-4">Priority:</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge bg-{{ announcement.priority_color }}">
+                                            {{ announcement.get_priority_display }}
+                                        </span>
+                                    </dd>
+                                    
+                                    <dt class="col-sm-4">Published:</dt>
+                                    <dd class="col-sm-8">
+                                        {% if announcement.is_published %}
+                                        <span class="badge bg-success">Yes</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Draft</span>
+                                        {% endif %}
+                                    </dd>
+                                    
+                                    <dt class="col-sm-4">Publish Date:</dt>
+                                    <dd class="col-sm-8">{{ announcement.publish_at|date:"M d, Y H:i" }}</dd>
+                                    
+                                    <dt class="col-sm-4">Created:</dt>
+                                    <dd class="col-sm-8">{{ announcement.created_at|date:"M d, Y" }}</dd>
+                                    
+                                    <dt class="col-sm-4">Audience:</dt>
+                                    <dd class="col-sm-8">
+                                        {% if announcement.is_church_wide %}
+                                        <span class="badge bg-primary">Church Wide</span>
+                                        {% else %}
+                                        <span class="badge bg-success">{{ target_count }} target(s)</span>
+                                        {% endif %}
+                                    </dd>
+                                </dl>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-warning text-dark">
+                                    <div class="card-body text-center">
+                                        <div class="display-4">
+                                            {% if announcement.is_published %}
+                                            <i class="fas fa-bullhorn"></i>
+                                            {% else %}
+                                            <i class="fas fa-file"></i>
+                                            {% endif %}
+                                        </div>
+                                        <p class="mb-0">
+                                            {% if announcement.is_published %}
+                                            Active Announcement
+                                            {% else %}
+                                            Draft Announcement
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Announcement Content Preview -->
+                        <div class="mt-3">
+                            <h6>Content Preview:</h6>
+                            <div class="alert alert-light border">
+                                {{ announcement.content|truncatechars:200|linebreaks }}
+                                {% if announcement.content|length > 200 %}
+                                <small class="text-muted">... (truncated)</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- What will be deleted -->
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-circle"></i> Impact of Deletion
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Immediate Effects:</h6>
+                                <ul>
+                                    <li>Announcement will be permanently removed from the system</li>
+                                    <li>All targeting information will be lost</li>
+                                    <li>Scheduling information will be deleted</li>
+                                    <li>History of this announcement will be erased</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>User Impact:</h6>
+                                <ul>
+                                    <li>Users will no longer see this announcement</li>
+                                    <li>Any links to this announcement will break</li>
+                                    <li>Search results will be updated</li>
+                                    <li>Statistics will be adjusted</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-lightbulb"></i> 
+                            <strong>Consideration:</strong> 
+                            If this announcement is still relevant, consider updating it instead of deleting it.
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Confirmation Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmDeleteContent" required>
+                        <label class="form-check-label" for="confirmDeleteContent">
+                            I understand that the announcement content will be permanently deleted.
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmDeleteAudience" required>
+                        <label class="form-check-label" for="confirmDeleteAudience">
+                            I understand that all audience targeting information will be lost.
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirmDeleteIrreversible" required>
+                        <label class="form-check-label text-danger" for="confirmDeleteIrreversible">
+                            <strong>I understand that this action is permanent and cannot be undone.</strong>
+                        </label>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'announcements:detail' announcement.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancel
+                        </a>
+                        
+                        <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                            <i class="fas fa-trash"></i> Delete Announcement Permanently
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Alternative Actions -->
+        <div class="card shadow mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb"></i> Alternative Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Instead of deleting, consider these alternatives:</p>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-edit fa-2x text-primary mb-3"></i>
+                                <h6>Edit Announcement</h6>
+                                <p class="small text-muted">
+                                    Update the content or details of this announcement.
+                                </p>
+                                <a href="{% url 'announcements:update' announcement.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-archive fa-2x text-warning mb-3"></i>
+                                <h6>Archive Instead</h6>
+                                <p class="small text-muted">
+                                    Keep for records but mark as inactive.
+                                </p>
+                                <button class="btn btn-outline-warning btn-sm" disabled>
+                                    <i class="fas fa-archive"></i> (Coming Soon)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="fas fa-clock fa-2x text-info mb-3"></i>
+                                <h6>Schedule Expiry</h6>
+                                <p class="small text-muted">
+                                    Set an expiry date instead of deleting.
+                                </p>
+                                <a href="{% url 'announcements:update' announcement.pk %}" class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-calendar"></i> Set Expiry
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const deleteButton = document.querySelector('#deleteButton');
+    
+    function updateDeleteButton() {
+        const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+        deleteButton.disabled = !allChecked;
+        
+        // Update button text based on checkboxes
+        if (allChecked) {
+            deleteButton.innerHTML = '<i class="fas fa-trash"></i> Delete Announcement Permanently';
+        }
+    }
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateDeleteButton);
+    });
+    
+    // Prevent accidental double-clicks
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            deleteButton.disabled = true;
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            
+            // Also disable checkboxes
+            checkboxes.forEach(checkbox => {
+                checkbox.disabled = true;
+            });
+        });
+    }
+    
+    // Add warning on page leave if form is partially filled
+    let formChanged = false;
+    const checkboxesInputs = form.querySelectorAll('input');
+    checkboxesInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            formChanged = true;
+        });
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+    
+    // Add visual feedback for checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const label = this.nextElementSibling;
+            if (this.checked) {
+                label.style.fontWeight = 'bold';
+                label.style.color = this.id === 'confirmDeleteIrreversible' ? '#dc3545' : '#198754';
+            } else {
+                label.style.fontWeight = 'normal';
+                label.style.color = '';
+            }
+        });
+    });
+    
+    // Initialize checkboxes state
+    checkboxes.forEach(checkbox => {
+        checkbox.dispatchEvent(new Event('change'));
+    });
+});
+</script>
+
+<style>
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.form-check-input:checked#confirmDeleteIrreversible {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.card.border-danger {
+    border-width: 2px;
+}
+
+.alert-light.border {
+    max-height: 150px;
+    overflow-y: auto;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,485 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ announcement.title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Announcement Header -->
+        <div class="card shadow mb-4 border-{{  announcement.priority_color  }}">
+            <div class="card-header bg-{{ announcement.priority_color }} text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">
+                            <i class="fas fa-bullhorn"></i> {{ announcement.title }}
+                        </h3>
+                        <p class="mb-0 mt-1">
+                            <i class="fas fa-user"></i> 
+                            {{ announcement.author.get_full_name|default:announcement.author.username }}
+                        </p>
+                    </div>
+                    <span class="badge bg-light text-dark fs-6">
+                        {{ announcement.get_priority_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- Announcement Content -->
+                <div class="mb-4">
+                    <div class="announcement-content">
+                        {{ announcement.content|linebreaks }}
+                    </div>
+                </div>
+                
+                <!-- Announcement Details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-calendar"></i> Timing Information</h5>
+                        <dl class="row">
+                            <dt class="col-sm-5">Published:</dt>
+                            <dd class="col-sm-7">
+                                {{ announcement.publish_at|date:"F d, Y" }}
+                                <br>
+                                <small class="text-muted">{{ announcement.publish_at|date:"g:i A" }}</small>
+                            </dd>
+                            
+                            {% if announcement.expires_at %}
+                            <dt class="col-sm-5">Expires:</dt>
+                            <dd class="col-sm-7">
+                                {{ announcement.expires_at|date:"F d, Y" }}
+                                <br>
+                                <small class="text-muted">{{ announcement.expires_at|date:"g:i A" }}</small>
+                            </dd>
+                            {% endif %}
+                            
+                            <dt class="col-sm-5">Created:</dt>
+                            <dd class="col-sm-7">{{ announcement.created_at|date:"M d, Y" }}</dd>
+                            
+                            <dt class="col-sm-5">Last Updated:</dt>
+                            <dd class="col-sm-7">{{ announcement.updated_at|date:"M d, Y" }}</dd>
+                            
+                            {% if is_expired %}
+                            <dt class="col-sm-5">Status:</dt>
+                            <dd class="col-sm-7">
+                                <span class="badge bg-secondary">Expired</span>
+                                <small class="text-muted d-block mt-1">
+                                    This announcement is no longer active.
+                                </small>
+                            </dd>
+                            {% endif %}
+                        </dl>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-users"></i> Audience Information</h5>
+                        <dl class="row">
+                            <dt class="col-sm-5">Scope:</dt>
+                            <dd class="col-sm-7">
+                                {% if announcement.is_church_wide %}
+                                <span class="badge bg-primary">
+                                    <i class="fas fa-church"></i> Church Wide
+                                </span>
+                                {% else %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-user-friends"></i> Targeted
+                                </span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-5">Target Groups:</dt>
+                            <dd class="col-sm-7">
+                                {% if announcement.target_groups.exists %}
+                                <div class="mb-2">
+                                    {% for group in announcement.target_groups.all %}
+                                    <span class="badge bg-success me-1 mb-1">{{ group.name }}</span>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">None selected</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-5">Target Members:</dt>
+                            <dd class="col-sm-7">
+                                {% if announcement.target_members.exists %}
+                                <div class="mb-2">
+                                    {% for member in announcement.target_members.all|slice:":3" %}
+                                    <span class="badge bg-warning me-1 mb-1">
+                                        {{ member.get_full_name|default:member.username }}
+                                    </span>
+                                    {% endfor %}
+                                    {% if announcement.target_members.count > 3 %}
+                                    <span class="badge bg-info">
+                                        +{{ announcement.target_members.count|add:"-3" }} more
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">None selected</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-5">Publication Status:</dt>
+                            <dd class="col-sm-7">
+                                {% if announcement.is_published %}
+                                <span class="badge bg-success">Published</span>
+                                {% else %}
+                                <span class="badge bg-warning">Draft</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+                
+                <!-- Status Indicators -->
+                <div class="alert alert-{{ is_expired|yesno:'secondary,info' }}">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <i class="fas fa-{% if announcement.is_published %}check-circle text-success{% else %}clock text-warning{% endif %} fa-2x mb-2"></i>
+                            <h6>Publication</h6>
+                            <p class="mb-0">
+                                {% if announcement.is_published %}
+                                Published
+                                {% else %}
+                                Draft
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <i class="fas fa-{% if announcement.publish_at > now %}clock text-info{% else %}calendar-check text-success{% endif %} fa-2x mb-2"></i>
+                            <h6>Timing</h6>
+                            <p class="mb-0">
+                                {% if announcement.publish_at > now %}
+                                Scheduled
+                                {% else %}
+                                Active
+                                {% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <i class="fas fa-{% if is_expired %}hourglass-end text-secondary{% else %}hourglass-start text-primary{% endif %} fa-2x mb-2"></i>
+                            <h6>Expiry</h6>
+                            <p class="mb-0">
+                                {% if is_expired %}
+                                Expired
+                                {% elif announcement.expires_at %}
+                                {{ announcement.expires_at|timeuntil }} left
+                                {% else %}
+                                No expiry
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Related Announcements -->
+        {% if related_announcements %}
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-random"></i> Related Announcements
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for related in related_announcements %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h6>
+                                    <a href="{% url 'announcements:detail' related.pk %}" class="text-decoration-none">
+                                        {{ related.title|truncatechars:40 }}
+                                    </a>
+                                </h6>
+                                <p class="small text-muted mb-1">
+                                    <i class="fas fa-user"></i> {{ related.author.get_full_name|default:related.author.username }}
+                                </p>
+                                <p class="small text-muted mb-2">
+                                    <i class="fas fa-calendar"></i> {{ related.publish_at|date:"M d, Y" }}
+                                </p>
+                                <div class="mb-2">
+                                    <span class="badge bg-{{ announcement.priority_color  }}">
+                                        {{ related.get_priority_display }}
+                                    </span>
+                                </div>
+                                <a href="{% url 'announcements:detail' related.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'announcements:list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </a>
+                    
+                    {% if can_edit %}
+                    <a href="{% url 'announcements:update' announcement.pk %}" class="btn btn-outline-warning">
+                        <i class="fas fa-edit"></i> Edit Announcement
+                    </a>
+                    {% endif %}
+                    
+                    {% if can_delete %}
+                    <a href="{% url 'announcements:delete' announcement.pk %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> Delete Announcement
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'announcements:dashboard' %}" class="btn btn-outline-info">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                    
+                    {% if user == announcement.author %}
+                    <a href="{% url 'announcements:my_announcements' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-user"></i> My Announcements
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Announcement Statistics -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> Announcement Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-4">
+                        {% if announcement.is_published %}
+                        <i class="fas fa-check-circle text-success"></i>
+                        {% else %}
+                        <i class="fas fa-clock text-warning"></i>
+                        {% endif %}
+                    </div>
+                    <p class="text-muted">
+                        {% if announcement.is_published %}
+                        Published
+                        {% else %}
+                        Draft
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded">
+                            <div class="h5 mb-0">{{ announcement.target_groups.count }}</div>
+                            <small class="text-muted">Groups</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded">
+                            <div class="h5 mb-0">{{ announcement.target_members.count }}</div>
+                            <small class="text-muted">Members</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-2">
+                    <small class="text-muted d-block mb-1">
+                        <i class="fas fa-history"></i> Time Since Creation
+                    </small>
+                    <div class="progress" style="height: 8px;">
+                        {% with age=announcement.created_at|timesince %}
+                        {% if "day" in age %}
+                        <div class="progress-bar bg-warning" style="width: 100%"></div>
+                        {% elif "hour" in age %}
+                        <div class="progress-bar bg-info" style="width: 70%"></div>
+                        {% else %}
+                        <div class="progress-bar bg-success" style="width: 30%"></div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        {{ announcement.created_at|timesince }} ago
+                    </small>
+                </div>
+                
+                {% if announcement.expires_at %}
+                <div class="mt-3">
+                    <small class="text-muted d-block mb-1">
+                        <i class="fas fa-hourglass"></i> Time Until Expiry
+                    </small>
+                    <div class="progress" style="height: 8px;">
+                        {% with remaining=announcement.expires_at|timeuntil %}
+                        {% if "day" in remaining %}
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                        {% elif "hour" in remaining %}
+                        <div class="progress-bar bg-warning" style="width: 50%"></div>
+                        {% else %}
+                        <div class="progress-bar bg-danger" style="width: 20%"></div>
+                        {% endif %}
+                        {% endwith %}
+                    </div>
+                    <small class="text-muted d-block mt-1">
+                        {% if is_expired %}
+                        Expired {{ announcement.expires_at|timesince }} ago
+                        {% else %}
+                        {{ announcement.expires_at|timeuntil }} left
+                        {% endif %}
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Author Information -->
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-edit"></i> Author Information
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-user-circle fa-3x text-primary"></i>
+                </div>
+                <h6>{{ announcement.author.get_full_name|default:announcement.author.username }}</h6>
+                <p class="text-muted mb-2">
+                    {{ announcement.author.email }}
+                </p>
+                
+                {% if announcement.author.church_role %}
+                <span class="badge bg-primary">
+                    {{ announcement.author.church_role.get_role_type_display }}
+                </span>
+                {% endif %}
+                
+                <div class="mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-file-alt"></i> 
+                        {{ announcement.author.authored_announcements.count }} announcements
+                    </small>
+                </div>
+                
+                {% if user == announcement.author %}
+                <div class="mt-3">
+                    <a href="{% url 'announcements:my_announcements' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list"></i> View All My Announcements
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.announcement-content {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #333;
+}
+
+.announcement-content p {
+    margin-bottom: 1rem;
+}
+
+.announcement-content ul, 
+.announcement-content ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.card-header.bg-danger .badge {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: #dc3545 !important;
+}
+
+.card-header.bg-warning .badge {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: #fd7e14 !important;
+}
+
+.card-header.bg-primary .badge {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    color: #007bff !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add copy link functionality
+    const copyLinkBtn = document.createElement('button');
+    copyLinkBtn.className = 'btn btn-outline-secondary btn-sm';
+    copyLinkBtn.innerHTML = '<i class="fas fa-link"></i> Copy Link';
+    copyLinkBtn.style.position = 'absolute';
+    copyLinkBtn.style.top = '10px';
+    copyLinkBtn.style.right = '10px';
+    
+    const cardHeader = document.querySelector('.card-header');
+    if (cardHeader) {
+        cardHeader.style.position = 'relative';
+        cardHeader.appendChild(copyLinkBtn);
+        
+        copyLinkBtn.addEventListener('click', function() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                // Show feedback
+                const originalHTML = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-success');
+                
+                setTimeout(() => {
+                    this.innerHTML = originalHTML;
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-outline-secondary');
+                }, 2000);
+            });
+        });
+    }
+    
+    // Highlight expired announcements
+    {% if is_expired %}
+    const announcementCard = document.querySelector('.card');
+    if (announcementCard) {
+        announcementCard.style.opacity = '0.8';
+        announcementCard.style.borderStyle = 'dashed';
+    }
+    {% endif %}
+    
+    // Add print functionality
+    const printBtn = document.createElement('button');
+    printBtn.className = 'btn btn-outline-info btn-sm mt-3 w-100';
+    printBtn.innerHTML = '<i class="fas fa-print"></i> Print Announcement';
+    
+    const quickActions = document.querySelector('.card-body .d-grid');
+    if (quickActions) {
+        quickActions.appendChild(printBtn);
+        
+        printBtn.addEventListener('click', function() {
+            window.print();
+        });
+    }
+});
+</script>
+{% endblock %}

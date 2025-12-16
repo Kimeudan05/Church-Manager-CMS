@@ -53,3 +53,14 @@ class Announcement(models.Model):
         if self.publish_at:
             return f"{self.title} ({self.publish_at:%b %d})"
         return self.title
+
+    PRIORITY_COLORS = {
+        "urgent": "danger",
+        "high": "warning",
+        "normal": "primary",
+        "low": "secondary",
+    }
+
+    @property
+    def priority_color(self):
+        return self.PRIORITY_COLORS.get(self.priority, "secondary")

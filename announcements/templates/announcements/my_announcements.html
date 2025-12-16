@@ -1,0 +1,544 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}My Announcements - Church CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-user"></i> My Announcements
+    </h1>
+    
+    <div class="btn-group">
+        <a href="{% url 'announcements:list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Back to All
+        </a>
+        <a href="{% url 'announcements:create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Announcement
+        </a>
+        <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#statsModal">
+            <i class="fas fa-chart-bar"></i> My Stats
+        </button>
+    </div>
+</div>
+
+<!-- Personal Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_announcements }}</h3>
+                <p class="mb-0">Total</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ published_count }}</h3>
+                <p class="mb-0">Published</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ scheduled_count }}</h3>
+                <p class="mb-0">Scheduled</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-secondary">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ drafts_count }}</h3>
+                <p class="mb-0">Drafts</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="fas fa-filter"></i> Filter My Announcements
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                {{ filter_form.priority|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.status|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.start_date|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.end_date|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+                {{ filter_form.search|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'announcements:my_announcements' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Status Tabs -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-white border-bottom-0">
+        <ul class="nav nav-tabs card-header-tabs" id="announcementTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                    All <span class="badge bg-primary">{{ total_announcements }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="published-tab" data-bs-toggle="tab" data-bs-target="#published" type="button" role="tab">
+                    Published <span class="badge bg-success">{{ published_count }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="scheduled-tab" data-bs-toggle="tab" data-bs-target="#scheduled" type="button" role="tab">
+                    Scheduled <span class="badge bg-warning">{{ scheduled_count }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="drafts-tab" data-bs-toggle="tab" data-bs-target="#drafts" type="button" role="tab">
+                    Drafts <span class="badge bg-secondary">{{ drafts_count }}</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="expired-tab" data-bs-toggle="tab" data-bs-target="#expired" type="button" role="tab">
+                    Expired <span class="badge bg-danger">{{ expired_count }}</span>
+                </button>
+            </li>
+        </ul>
+    </div>
+    
+    <div class="card-body">
+        <div class="tab-content" id="announcementTabsContent">
+            <!-- All Tab -->
+            <div class="tab-pane fade show active" id="all" role="tabpanel">
+                {% include 'announcements/_announcement_table.html' with announcements=all_announcements %}
+            </div>
+
+            <!-- Published Tab -->
+            <div class="tab-pane fade" id="published" role="tabpanel">
+                {% if published_announcements %}
+                    {% include 'announcements/_announcement_table.html' with announcements=published_announcements %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p>No published announcements</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Scheduled Tab -->
+            <div class="tab-pane fade" id="scheduled" role="tabpanel">
+                {% include 'announcements/_announcement_table.html' with announcements=scheduled_announcements %}
+            </div>
+
+            <!-- Drafts Tab -->
+            <div class="tab-pane fade" id="drafts" role="tabpanel">
+                {% include 'announcements/_announcement_table.html' with announcements=draft_announcements %}
+            </div>
+
+            <!-- Expired Tab -->
+            <div class="tab-pane fade" id="expired" role="tabpanel">
+                {% include 'announcements/_announcement_table.html' with announcements=expired_announcements %}
+            </div>
+
+    </div>
+</div>
+
+<!-- Quick Create Card -->
+<div class="card shadow">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-bolt"></i> Quick Actions
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-plus-circle fa-3x text-primary mb-3"></i>
+                        <h5>Create New Announcement</h5>
+                        <p class="text-muted">Create a new announcement with full details and targeting options.</p>
+                        <a href="{% url 'announcements:create' %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Create Full Announcement
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bolt fa-3x text-success mb-3"></i>
+                        <h5>Quick Announcement</h5>
+                        <p class="text-muted">Create a simple announcement that publishes immediately.</p>
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#quickCreateModal">
+                            <i class="fas fa-paper-plane"></i> Quick Create
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Modal -->
+<div class="modal fade" id="statsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar"></i> My Announcement Statistics
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Overview</h6>
+                        <dl class="row">
+                            <dt class="col-sm-6">Total Announcements:</dt>
+                            <dd class="col-sm-6">{{ total_announcements }}</dd>
+                            
+                            <dt class="col-sm-6">Published:</dt>
+                            <dd class="col-sm-6">{{ published_count }}</dd>
+                            
+                            <dt class="col-sm-6">Scheduled:</dt>
+                            <dd class="col-sm-6">{{ scheduled_count }}</dd>
+                            
+                            <dt class="col-sm-6">Drafts:</dt>
+                            <dd class="col-sm-6">{{ drafts_count }}</dd>
+                            
+                            <dt class="col-sm-6">Expired:</dt>
+                            <dd class="col-sm-6">{{ expired_count }}</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Activity</h6>
+                        <div class="card">
+                            <div class="card-body">
+
+                                <!-- Last Created -->
+                                <p class="mb-2">
+                                    <i class="fas fa-calendar"></i>
+                                    <strong>Last Created:</strong>
+                                    {% if all_announcements %}
+                                        {{ all_announcements.0.created_at|date:"M d, Y" }}
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </p>
+
+                                <!-- Last Updated -->
+                                <p class="mb-2">
+                                    <i class="fas fa-edit"></i>
+                                    <strong>Last Updated:</strong>
+                                    {% if all_announcements %}
+                                        {{ all_announcements.0.updated_at|date:"M d, Y" }}
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </p>
+
+                                <!-- Last Published -->
+                                <p class="mb-0">
+                                    <i class="fas fa-bullhorn"></i>
+                                    <strong>Last Published:</strong>
+                                    {% if published_announcements %}
+                                        {{ published_announcements.0.publish_at|date:"M d, Y" }}
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </p>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                
+                <hr>
+                
+                <h6 class="mt-3">Priority Distribution</h6>
+                <div class="row">
+                    {% for stat in priority_stats %}
+                    <div class="col-md-3 mb-3">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <div class="h2 mb-0 text-{{ stat.color }}">
+                                    {{ stat.count }}
+                                </div>
+                                <p class="mb-0">{{ stat.label }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb"></i> 
+                    <strong>Tips for Better Announcements:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Use clear and descriptive titles</li>
+                        <li>Target announcements to relevant audiences</li>
+                        <li>Schedule announcements for optimal times</li>
+                        <li>Review drafts before publishing</li>
+                        <li>Set expiry dates for time-sensitive announcements</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{% url 'announcements:create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create New Announcement
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Create Modal -->
+<div class="modal fade" id="quickCreateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-bolt"></i> Quick Announcement
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'announcements:quick_create' %}" id="quickCreateForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="myQuickTitle" class="form-label">Title *</label>
+                        <input type="text" class="form-control" id="myQuickTitle" name="title" required 
+                               placeholder="Enter announcement title" maxlength="200">
+                    </div>
+                    <div class="mb-3">
+                        <label for="myQuickContent" class="form-label">Content *</label>
+                        <textarea class="form-control" id="myQuickContent" name="content" rows="3" required 
+                                  placeholder="Enter announcement content"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="myQuickPriority" class="form-label">Priority</label>
+                                <select class="form-control" id="myQuickPriority" name="priority">
+                                    <option value="normal">Normal</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3 form-check pt-4">
+                                <input type="checkbox" class="form-check-input" id="myQuickChurchWide" name="is_church_wide" checked>
+                                <label class="form-check-label" for="myQuickChurchWide">Church Wide</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-paper-plane"></i> Publish Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    color: #007bff;
+    border-bottom: 3px solid #007bff;
+    background: transparent;
+}
+
+.nav-tabs .badge {
+    font-size: 0.7em;
+    padding: 0.25em 0.5em;
+}
+
+.tab-content {
+    min-height: 300px;
+}
+
+.card {
+    margin-bottom: 1rem;
+}
+
+.table th {
+    border-top: none;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab functionality
+    const tabButtons = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function(event) {
+            // Update URL hash
+            const tabId = event.target.getAttribute('data-bs-target').substring(1);
+            window.location.hash = tabId;
+            
+            // Store active tab in localStorage
+            localStorage.setItem('activeAnnouncementTab', tabId);
+        });
+    });
+    
+    // Restore active tab from localStorage or URL hash
+    const activeTab = localStorage.getItem('activeAnnouncementTab') || window.location.hash.substring(1);
+    if (activeTab) {
+        const tabButton = document.querySelector(`button[data-bs-target="#${activeTab}"]`);
+        if (tabButton) {
+            const tab = new bootstrap.Tab(tabButton);
+            tab.show();
+        }
+    }
+    
+    // Set default dates for filter
+    const startDateField = document.querySelector('#id_start_date');
+    const endDateField = document.querySelector('#id_end_date');
+    
+    if (startDateField && !startDateField.value) {
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        startDateField.value = oneMonthAgo.toISOString().split('T')[0];
+    }
+    
+    if (endDateField && !endDateField.value) {
+        const today = new Date().toISOString().split('T')[0];
+        endDateField.value = today;
+    }
+    
+    // Quick create form submission
+    const quickCreateForm = document.querySelector('#quickCreateForm');
+    if (quickCreateForm) {
+        quickCreateForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+            submitBtn.disabled = true;
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.querySelector('#quickCreateModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    showNotification('Announcement created successfully!', 'success');
+                    
+                    // Clear form
+                    quickCreateForm.reset();
+                    
+                    // Reload page after a short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Show errors
+                    let errorMsg = 'Please fix the following errors:<br>';
+                    for (const field in data.errors) {
+                        errorMsg += `- ${data.errors[field]}<br>`;
+                    }
+                    showNotification(errorMsg, 'danger');
+                    
+                    // Reset button
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred. Please try again.', 'danger');
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
+    
+    // Function to show notifications
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show`;
+        notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1050;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 5000);
+    }
+    
+    // Auto-refresh tabs based on URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const statusParam = urlParams.get('status');
+    if (statusParam) {
+        const tabButton = document.querySelector(`button[data-bs-target="#${statusParam}"]`);
+        if (tabButton) {
+            const tab = new bootstrap.Tab(tabButton);
+            tab.show();
+        }
+    }
+});
+</script>
+{% endblock %}

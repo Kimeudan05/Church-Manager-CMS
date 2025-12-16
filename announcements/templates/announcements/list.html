@@ -1,0 +1,534 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Announcements - Church CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-bullhorn"></i> Announcements
+    </h1>
+    
+    {% if can_create_announcement %}
+    <div class="btn-group">
+        <a href="{% url 'announcements:create' %}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> New Announcement
+        </a>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#quickCreateModal">
+            <i class="fas fa-bolt"></i> Quick Create
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_announcements }}</h3>
+                <p class="mb-0">Total Announcements</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ urgent_announcements }}</h3>
+                <p class="mb-0">Urgent</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ recent_announcements }}</h3>
+                <p class="mb-0">Last 7 Days</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ user_groups|length }}</h3>
+                <p class="mb-0">Your Groups</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="fas fa-filter"></i> Filter Announcements
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-2">
+                {{ filter_form.priority|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.status|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.is_church_wide|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.start_date|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.end_date|as_crispy_field }}
+            </div>
+            <div class="col-md-2">
+                {{ filter_form.search|as_crispy_field }}
+            </div>
+            {% if user.is_staff %}
+            <div class="col-md-3">
+                {{ filter_form.author|as_crispy_field }}
+            </div>
+            {% endif %}
+            <div class="col-md-12">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'announcements:list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </h5>
+                <a href="{% url 'announcements:dashboard' %}" class="btn btn-light mt-2">
+                    <i class="fas fa-chart-bar"></i> View Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-user"></i> My Announcements
+                </h5>
+                <a href="{% url 'announcements:my_announcements' %}" class="btn btn-light mt-2">
+                    <i class="fas fa-list"></i> View Mine
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-calendar"></i> Today
+                </h5>
+                <p class="card-text">{{ today|date:"F d, Y" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Priority Overview -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-chart-pie"></i> Announcements by Priority
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for priority_name, count in announcements_by_priority.items %}
+            <div class="col-md-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span>{{ priority_name }}</span>
+                    <span class="badge bg-{% if priority_name == 'Urgent - Immediate Attention' %}danger{% elif priority_name == 'High - Important' %}warning{% elif priority_name == 'Normal' %}primary{% else %}secondary{% endif %}">
+                        {{ count }}
+                    </span>
+                </div>
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-{% if priority_name == 'Urgent - Immediate Attention' %}danger{% elif priority_name == 'High - Important' %}warning{% elif priority_name == 'Normal' %}primary{% else %}secondary{% endif %}" 
+                         style="width: {% if total_announcements > 0 %}{% widthratio count total_announcements 100 %}%{% else %}0%{% endif %}">
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Announcements List -->
+{% if announcements %}
+<div class="row">
+    {% for announcement in announcements %}
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100 border-{% if announcement.priority == 'urgent' %}danger{% elif announcement.priority == 'high' %}warning{% elif announcement.priority == 'normal' %}primary{% else %}secondary{% endif %}">
+            <div class="card-header bg-{% if announcement.priority == 'urgent' %}danger{% elif announcement.priority == 'high' %}warning{% elif announcement.priority == 'normal' %}primary{% else %}secondary{% endif %} text-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">
+                        <a href="{% url 'announcements:detail' announcement.pk %}" class="text-white text-decoration-none">
+                            {{ announcement.title|truncatechars:40 }}
+                        </a>
+                    </h5>
+                    <small class="d-block mt-1">
+                        <i class="fas fa-user"></i> 
+                        {{ announcement.author.get_full_name|default:announcement.author.username }}
+                    </small>
+                </div>
+                <span class="badge bg-light text-dark">
+                    {{ announcement.get_priority_display|truncatechars:15 }}
+                </span>
+            </div>
+            
+            <div class="card-body">
+                <p class="card-text">
+                    {{ announcement.content|truncatechars:200 }}
+                </p>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar"></i> 
+                            <strong>Published:</strong> 
+                            {{ announcement.publish_at|date:"M d, Y" }}
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> 
+                            <strong>Time:</strong> 
+                            {{ announcement.publish_at|date:"g:i A" }}
+                        </small>
+                    </div>
+                </div>
+                
+                {% if announcement.expires_at %}
+                <div class="mb-3">
+                    <small class="text-muted">
+                        <i class="fas fa-hourglass-end"></i> 
+                        <strong>Expires:</strong> 
+                        {{ announcement.expires_at|date:"M d, Y g:i A" }}
+                    </small>
+                </div>
+                {% endif %}
+                
+                <!-- Target Information -->
+                <div class="mb-3">
+                    {% if announcement.is_church_wide %}
+                    <span class="badge bg-primary">
+                        <i class="fas fa-church"></i> Church Wide
+                    </span>
+                    {% else %}
+                    <span class="badge bg-success">
+                        <i class="fas fa-users"></i> 
+                        {{ announcement.target_groups.count }} group(s)
+                    </span>
+                    {% if announcement.target_members.count %}
+                    <span class="badge bg-warning">
+                        <i class="fas fa-user"></i> 
+                        {{ announcement.target_members.count }} member(s)
+                    </span>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                
+                <!-- Status Badges -->
+                <div class="mb-3">
+                    {% if announcement.expires_at and announcement.expires_at < now %}
+                    <span class="badge bg-secondary">Expired</span>
+                    {% elif announcement.publish_at > now %}
+                    <span class="badge bg-info">Scheduled</span>
+                    {% else %}
+                    <span class="badge bg-success">Published</span>
+                    {% endif %}
+                    
+                    {% if announcement.is_published %}
+                    <span class="badge bg-success">Active</span>
+                    {% else %}
+                    <span class="badge bg-warning">Draft</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> 
+                            {{ announcement.updated_at|timesince }} ago
+                        </small>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <a href="{% url 'announcements:detail' announcement.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        
+                        {% if user.is_staff or user == announcement.author %}
+                        <a href="{% url 'announcements:update' announcement.pk %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card shadow">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-bullhorn fa-4x text-muted mb-3"></i>
+        <h4 class="text-muted">No Announcements Found</h4>
+        <p class="text-muted">
+            {% if request.GET %}
+            No announcements match your filters.
+            {% else %}
+            No announcements available for you at this time.
+            {% endif %}
+        </p>
+        {% if can_create_announcement %}
+        <a href="{% url 'announcements:create' %}" class="btn btn-primary mt-3">
+            <i class="fas fa-plus"></i> Create Your First Announcement
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                Previous
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                Next
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- User Groups -->
+{% if user_groups %}
+<div class="card shadow mt-4">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+            <i class="fas fa-user-friends"></i> Your Groups
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for membership in user_groups %}
+            <div class="col-md-3 mb-2">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h6 class="card-title mb-1">{{ membership.group.name }}</h6>
+                        <p class="card-text small text-muted mb-1">
+                            {{ membership.group.get_group_type_display }}
+                        </p>
+                        <span class="badge bg-{% if membership.is_primary %}primary{% else %}secondary{% endif %}">
+                            {{ membership.role|default:"Member" }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick Create Modal -->
+{% if can_create_announcement %}
+<div class="modal fade" id="quickCreateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-bolt"></i> Quick Announcement
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'announcements:quick_create' %}" id="quickCreateForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" required 
+                               placeholder="Enter announcement title">
+                    </div>
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content</label>
+                        <textarea class="form-control" id="content" name="content" rows="3" required 
+                                  placeholder="Enter announcement content"></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-control" id="priority" name="priority">
+                                    <option value="normal">Normal</option>
+                                    <option value="high">High</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3 form-check pt-4">
+                                <input type="checkbox" class="form-check-input" id="is_church_wide" name="is_church_wide" checked>
+                                <label class="form-check-label" for="is_church_wide">Church Wide</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Publish Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates for filter
+    const startDateField = document.querySelector('#id_start_date');
+    const endDateField = document.querySelector('#id_end_date');
+    
+    if (startDateField && !startDateField.value) {
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        startDateField.value = oneWeekAgo.toISOString().split('T')[0];
+    }
+    
+    if (endDateField && !endDateField.value) {
+        const today = new Date().toISOString().split('T')[0];
+        endDateField.value = today;
+    }
+    
+    // Quick create form submission
+    const quickCreateForm = document.querySelector('#quickCreateForm');
+    if (quickCreateForm) {
+        quickCreateForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal and show success message
+                    const modal = bootstrap.Modal.getInstance(document.querySelector('#quickCreateModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    showNotification('Announcement created successfully!', 'success');
+                    
+                    // Clear form
+                    quickCreateForm.reset();
+                    
+                    // Reload page after a short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    // Show errors
+                    let errorMsg = 'Please fix the following errors:<br>';
+                    for (const field in data.errors) {
+                        errorMsg += `- ${data.errors[field]}<br>`;
+                    }
+                    showNotification(errorMsg, 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred. Please try again.', 'danger');
+            });
+        });
+    }
+    
+    // Function to show notifications
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show`;
+        notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1050;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 5000);
+    }
+    
+    // Highlight urgent announcements
+    const urgentCards = document.querySelectorAll('.border-danger');
+    urgentCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.boxShadow = '0 0 20px rgba(220, 53, 69, 0.5)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.boxShadow = '';
+        });
+    });
+});
+</script>
+{% endblock %}

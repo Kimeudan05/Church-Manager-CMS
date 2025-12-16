@@ -17,7 +17,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("groups/", include("groups.urls")),
     path("events/", include("events.urls")),
-    # path('announcements/', include('announcements.urls')),
+    path("announcements/", include("announcements.urls")),
     path("sermons/", include("sermons.urls")),
     # path('curriculum/', include('curriculum.urls')),
     path("projects/", include("projects.urls")),

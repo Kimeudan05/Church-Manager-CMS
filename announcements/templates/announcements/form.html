@@ -1,0 +1,639 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title|default:"Announcement Form" }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-{% if submit_text == 'Create Announcement' %}plus{% else %}edit{% endif %}"></i> 
+                    {{ title|default:"Announcement Form" }}
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle"></i> Announcement Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.title|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.content|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.priority|as_crispy_field }}
+                                    <div class="priority-help mt-2">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle"></i> 
+                                            <span id="priorityHelpText">
+                                                {% if form.priority.value == 'urgent' %}
+                                                <span class="text-danger">Urgent: Requires immediate attention</span>
+                                                {% elif form.priority.value == 'high' %}
+                                                <span class="text-warning">High: Important announcement</span>
+                                                {% elif form.priority.value == 'normal' %}
+                                                <span class="text-primary">Normal: Regular announcement</span>
+                                                {% elif form.priority.value == 'low' %}
+                                                <span class="text-secondary">Low: Informational only</span>
+                                                {% else %}
+                                                Select a priority level
+                                                {% endif %}
+                                            </span>
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.is_published|as_crispy_field }}
+                                    <div class="form-text" id="publishedHelp">
+                                        {% if form.is_published.value %}
+                                        <span class="text-success">
+                                            <i class="fas fa-check-circle"></i> 
+                                            This announcement will be visible to the target audience.
+                                        </span>
+                                        {% else %}
+                                        <span class="text-warning">
+                                            <i class="fas fa-clock"></i> 
+                                            This announcement is saved as a draft and won't be visible.
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Audience Targeting -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-users"></i> Audience Targeting
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <div class="form-check form-switch">
+                                        {{ form.is_church_wide|as_crispy_field }}
+                                    </div>
+                                    <div class="form-text" id="churchWideHelp">
+                                        {% if form.is_church_wide.value %}
+                                        <span class="text-primary">
+                                            <i class="fas fa-church"></i> 
+                                            This announcement will be visible to all church members.
+                                        </span>
+                                        {% else %}
+                                        <span class="text-info">
+                                            <i class="fas fa-user-friends"></i> 
+                                            This announcement will only be visible to selected groups/members.
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="targetingFields" class="{% if form.is_church_wide.value %}d-none{% endif %}">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.target_groups|as_crispy_field }}
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle"></i> 
+                                            Select one or more groups to target this announcement.
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        {{ form.target_members|as_crispy_field }}
+                                        <div class="form-text">
+                                            <i class="fas fa-info-circle"></i> 
+                                            Select specific members to target this announcement.
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="alert alert-info">
+                                    <i class="fas fa-lightbulb"></i> 
+                                    <strong>Targeting Tips:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        <li>Leave both fields empty if you selected "Church Wide"</li>
+                                        <li>Select groups to target all members in those groups</li>
+                                        <li>Select specific members for personalized announcements</li>
+                                        <li>You can combine groups and members for mixed targeting</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Scheduling -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar"></i> Scheduling
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.publish_at|as_crispy_field }}
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> 
+                                        When this announcement should become visible.
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.expires_at|as_crispy_field }}
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle"></i> 
+                                        When this announcement should expire (optional).
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-warning" id="scheduleWarning" style="display: none;">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                <strong>Note:</strong> 
+                                <span id="scheduleWarningText"></span>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-clock"></i> 
+                                <strong>Current Time:</strong> 
+                                <span id="currentTime"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview Section -->
+                    <div class="card mb-4 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-eye"></i> Preview
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="preview-container">
+                                <h5 id="previewTitle" class="text-muted">
+                                    {% if form.title.value %}
+                                    {{ form.title.value }}
+                                    {% else %}
+                                    Announcement Title
+                                    {% endif %}
+                                </h5>
+                                <div id="previewContent" class="preview-content">
+                                    {% if form.content.value %}
+                                    {{ form.content.value|linebreaks }}
+                                    {% else %}
+                                    <p class="text-muted">Announcement content will appear here...</p>
+                                    {% endif %}
+                                </div>
+                                <div class="preview-footer mt-3">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user"></i> 
+                                        <span id="previewAuthor">{{ user.get_full_name|default:user.username }}</span>
+                                        • 
+                                        <i class="fas fa-calendar"></i> 
+                                        <span id="previewDate">
+                                            {% if form.publish_at.value %}
+                                            {{ form.publish_at.value|date:"M d, Y" }}
+                                            {% else %}
+                                            Just now
+                                            {% endif %}
+                                        </span>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Errors -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Please fix the errors below:</h5>
+                        <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if object %}{% url 'announcements:detail' object.pk %}{% else %}{% url 'announcements:list' %}{% endif %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        
+                        <div class="btn-group">
+                            <button type="submit" name="save_draft" class="btn btn-outline-warning" value="draft">
+                                <i class="fas fa-save"></i> Save as Draft
+                            </button>
+                            <button type="submit" name="save_publish" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> {{ submit_text|default:"Save & Publish" }}
+                            </button>
+                            
+                            {% if not object %}
+                            <button type="submit" name="save_and_add_another" class="btn btn-outline-primary">
+                                <i class="fas fa-plus"></i> Save & Add Another
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-question-circle"></i> Announcement Creation Guide
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Priority Levels:</h6>
+                <ul>
+                    <li>
+                        <span class="badge bg-danger">Urgent</span> - 
+                        Critical announcements requiring immediate attention (e.g., emergencies, urgent meetings)
+                    </li>
+                    <li>
+                        <span class="badge bg-warning">High</span> - 
+                        Important announcements (e.g., event changes, important reminders)
+                    </li>
+                    <li>
+                        <span class="badge bg-primary">Normal</span> - 
+                        Regular church announcements (e.g., weekly events, general updates)
+                    </li>
+                    <li>
+                        <span class="badge bg-secondary">Low</span> - 
+                        Informational announcements (e.g., newsletter updates, general information)
+                    </li>
+                </ul>
+                
+                <h6 class="mt-3">Targeting Options:</h6>
+                <ul>
+                    <li>
+                        <strong>Church Wide:</strong> Visible to all church members
+                    </li>
+                    <li>
+                        <strong>Target Groups:</strong> Visible only to members of selected groups
+                    </li>
+                    <li>
+                        <strong>Target Members:</strong> Visible only to selected individuals
+                    </li>
+                    <li>
+                        <strong>Mixed Targeting:</strong> Combine groups and members for specific audiences
+                    </li>
+                </ul>
+                
+                <h6 class="mt-3">Scheduling Tips:</h6>
+                <ul>
+                    <li>
+                        <strong>Publish Date:</strong> Set when the announcement should become visible
+                    </li>
+                    <li>
+                        <strong>Expiry Date:</strong> Optional - set when announcement should automatically expire
+                    </li>
+                    <li>
+                        <strong>Draft Mode:</strong> Save without publishing for later editing
+                    </li>
+                    <li>
+                        <strong>Scheduled Publishing:</strong> Set future publish date for automatic publishing
+                    </li>
+                </ul>
+                
+                <div class="alert alert-success mt-3">
+                    <i class="fas fa-lightbulb"></i> 
+                    <strong>Best Practices:</strong>
+                    <ul class="mb-0">
+                        <li>Keep titles clear and descriptive</li>
+                        <li>Use appropriate priority levels</li>
+                        <li>Target announcements to relevant audiences</li>
+                        <li>Schedule announcements for optimal visibility</li>
+                        <li>Set expiry dates for time-sensitive announcements</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.preview-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.preview-content {
+    min-height: 100px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+}
+
+.priority-help {
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 4px solid #007bff;
+}
+
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+/* Custom styling for select2 if used */
+.select2-container .select2-selection--multiple {
+    min-height: 38px;
+}
+
+.select2-container--bootstrap5 .select2-selection--multiple .select2-selection__choice {
+    background-color: #007bff;
+    border-color: #006fe6;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update current time display
+    function updateCurrentTime() {
+        const now = new Date();
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        };
+        document.getElementById('currentTime').textContent = now.toLocaleDateString('en-US', options);
+    }
+    
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 1000);
+    
+    // Priority level helper text
+    const priorityField = document.querySelector('#id_priority');
+    const priorityHelpText = document.querySelector('#priorityHelpText');
+    
+    const priorityHelp = {
+        'urgent': '<span class="text-danger">Urgent: Requires immediate attention (e.g., emergencies, urgent meetings)</span>',
+        'high': '<span class="text-warning">High: Important announcement (e.g., event changes, important reminders)</span>',
+        'normal': '<span class="text-primary">Normal: Regular church announcement (e.g., weekly events, general updates)</span>',
+        'low': '<span class="text-secondary">Low: Informational only (e.g., newsletter updates, general information)</span>'
+    };
+    
+    if (priorityField) {
+        priorityField.addEventListener('change', function() {
+            priorityHelpText.innerHTML = priorityHelp[this.value] || 'Select a priority level';
+        });
+        
+        // Initial update
+        if (priorityField.value) {
+            priorityHelpText.innerHTML = priorityHelp[priorityField.value];
+        }
+    }
+    
+    // Church-wide toggle
+    const churchWideField = document.querySelector('#id_is_church_wide');
+    const targetingFields = document.querySelector('#targetingFields');
+    const churchWideHelp = document.querySelector('#churchWideHelp');
+    
+    if (churchWideField) {
+        churchWideField.addEventListener('change', function() {
+            if (this.checked) {
+                targetingFields.classList.add('d-none');
+                churchWideHelp.innerHTML = `
+                    <span class="text-primary">
+                        <i class="fas fa-church"></i> 
+                        This announcement will be visible to all church members.
+                    </span>
+                `;
+            } else {
+                targetingFields.classList.remove('d-none');
+                churchWideHelp.innerHTML = `
+                    <span class="text-info">
+                        <i class="fas fa-user-friends"></i> 
+                        This announcement will only be visible to selected groups/members.
+                    </span>
+                `;
+            }
+        });
+    }
+    
+    // Published toggle
+    const publishedField = document.querySelector('#id_is_published');
+    const publishedHelp = document.querySelector('#publishedHelp');
+    
+    if (publishedField) {
+        publishedField.addEventListener('change', function() {
+            if (this.checked) {
+                publishedHelp.innerHTML = `
+                    <span class="text-success">
+                        <i class="fas fa-check-circle"></i> 
+                        This announcement will be visible to the target audience.
+                    </span>
+                `;
+            } else {
+                publishedHelp.innerHTML = `
+                    <span class="text-warning">
+                        <i class="fas fa-clock"></i> 
+                        This announcement is saved as a draft and won't be visible.
+                    </span>
+                `;
+            }
+        });
+    }
+    
+    // Schedule validation
+    const publishAtField = document.querySelector('#id_publish_at');
+    const expiresAtField = document.querySelector('#id_expires_at');
+    const scheduleWarning = document.querySelector('#scheduleWarning');
+    const scheduleWarningText = document.querySelector('#scheduleWarningText');
+    
+    function validateSchedule() {
+        if (!publishAtField.value) {
+            scheduleWarning.style.display = 'none';
+            return;
+        }
+        
+        const publishDate = new Date(publishAtField.value);
+        const now = new Date();
+        
+        if (expiresAtField.value) {
+            const expireDate = new Date(expiresAtField.value);
+            
+            if (expireDate <= publishDate) {
+                scheduleWarning.style.display = 'block';
+                scheduleWarningText.textContent = 'Expiry date must be after publish date.';
+                return;
+            }
+            
+            if (expireDate <= now) {
+                scheduleWarning.style.display = 'block';
+                scheduleWarningText.textContent = 'Expiry date is in the past. The announcement will expire immediately.';
+                return;
+            }
+        }
+        
+        if (publishDate <= now) {
+            scheduleWarning.style.display = 'block';
+            scheduleWarningText.textContent = 'Publish date is in the past. The announcement will be published immediately.';
+        } else {
+            scheduleWarning.style.display = 'none';
+        }
+    }
+    
+    if (publishAtField) {
+        publishAtField.addEventListener('change', validateSchedule);
+    }
+    
+    if (expiresAtField) {
+        expiresAtField.addEventListener('change', validateSchedule);
+    }
+    
+    // Real-time preview updates
+    const titleField = document.querySelector('#id_title');
+    const contentField = document.querySelector('#id_content');
+    const previewTitle = document.querySelector('#previewTitle');
+    const previewContent = document.querySelector('#previewContent');
+    
+    if (titleField) {
+        titleField.addEventListener('input', function() {
+            previewTitle.textContent = this.value || 'Announcement Title';
+        });
+    }
+    
+    if (contentField) {
+        contentField.addEventListener('input', function() {
+            previewContent.innerHTML = this.value 
+                ? this.value.replace(/\n/g, '<br>')
+                : '<p class="text-muted">Announcement content will appear here...</p>';
+        });
+    }
+    
+    // Publish date preview
+    if (publishAtField) {
+        publishAtField.addEventListener('change', function() {
+            const previewDate = document.querySelector('#previewDate');
+            if (this.value) {
+                const date = new Date(this.value);
+                previewDate.textContent = date.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+            } else {
+                previewDate.textContent = 'Just now';
+            }
+        });
+    }
+    
+    // Initialize Select2 for multi-select fields (if using Select2)
+    if (typeof $.fn.select2 !== 'undefined') {
+        $('#id_target_groups, #id_target_members').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Start typing to search...',
+            allowClear: true,
+            closeOnSelect: false
+        });
+    }
+    
+    // Add help button
+    const helpButton = document.createElement('button');
+    helpButton.type = 'button';
+    helpButton.className = 'btn btn-outline-info btn-sm float-end';
+    helpButton.innerHTML = '<i class="fas fa-question-circle"></i> Help Guide';
+    helpButton.setAttribute('data-bs-toggle', 'modal');
+    helpButton.setAttribute('data-bs-target', '#helpModal');
+    
+    const formHeader = document.querySelector('.card-header');
+    if (formHeader) {
+        formHeader.appendChild(helpButton);
+    }
+    
+    // Form submission handling
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Validate required fields
+            const title = document.querySelector('#id_title').value.trim();
+            const content = document.querySelector('#id_content').value.trim();
+            
+            if (!title || !content) {
+                e.preventDefault();
+                alert('Please fill in all required fields (title and content).');
+                return false;
+            }
+            
+            // Validate targeting
+            const isChurchWide = document.querySelector('#id_is_church_wide').checked;
+            const targetGroups = document.querySelector('#id_target_groups').value;
+            const targetMembers = document.querySelector('#id_target_members').value;
+            
+            if (!isChurchWide && !targetGroups && !targetMembers) {
+                e.preventDefault();
+                alert('Please select at least one target audience: either "Church Wide" or specific groups/members.');
+                return false;
+            }
+            
+            // Show loading state for submit buttons
+            const submitButtons = this.querySelectorAll('button[type="submit"]');
+            submitButtons.forEach(button => {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                button.disabled = true;
+                
+                // Restore button after 5 seconds (in case submission fails)
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 5000);
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

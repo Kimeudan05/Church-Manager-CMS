@@ -1,0 +1,157 @@
+<div class="modal-content">
+    <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">
+            <i class="fas fa-bolt"></i> Quick Announcement
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+    
+    <form method="post" id="ajaxQuickCreateForm">
+        {% csrf_token %}
+        
+        <div class="modal-body">
+            {% if form.errors %}
+            <div class="alert alert-danger">
+                <h6><i class="fas fa-exclamation-triangle"></i> Please fix the errors below:</h6>
+                <ul class="mb-0">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            
+            <div class="mb-3">
+                {{ form.title.label_tag }}
+                {{ form.title }}
+                <div class="form-text">Enter a clear and descriptive title for your announcement.</div>
+            </div>
+            
+            <div class="mb-3">
+                {{ form.content.label_tag }}
+                {{ form.content }}
+                <div class="form-text">Enter the content of your announcement.</div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.priority.label_tag }}
+                        {{ form.priority }}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3 form-check pt-4">
+                        {{ form.is_church_wide }}
+                        {{ form.is_church_wide.label_tag }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                This announcement will be published immediately to the selected audience.
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="submitQuickForm">
+                <i class="fas fa-paper-plane"></i> Publish Now
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quickForm = document.querySelector('#ajaxQuickCreateForm');
+    if (quickForm) {
+        quickForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('#submitQuickForm');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Publishing...';
+            submitBtn.disabled = true;
+            
+            fetch('{% url "announcements:quick_create" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.querySelector('#quickCreateModal'));
+                    modal.hide();
+                    
+                    // Show success message
+                    showNotification('Announcement created successfully!', 'success');
+                    
+                    // Clear form
+                    quickForm.reset();
+                    
+                    // Reload page or update UI
+                    if (typeof updateAnnouncementsList === 'function') {
+                        updateAnnouncementsList();
+                    } else {
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    }
+                } else {
+                    // Show errors
+                    let errorMsg = 'Please fix the following errors:<br>';
+                    for (const field in data.errors) {
+                        errorMsg += `- ${data.errors[field]}<br>`;
+                    }
+                    showNotification(errorMsg, 'danger');
+                    
+                    // Reset button
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred. Please try again.', 'danger');
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
+    
+    function showNotification(message, type) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `alert alert-${type} alert-dismissible fade show`;
+        notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 1050;';
+        notification.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Add to page
+        document.body.appendChild(notification);
+        
+        // Auto remove after 5 seconds
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.parentNode.removeChild(notification);
+            }
+        }, 5000);
+    }
+});
+</script>

@@ -1,0 +1,135 @@
+{% if announcements %}
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th width="30%">Title</th>
+                <th width="15%">Status</th>
+                <th width="15%">Priority</th>
+                <th width="15%">Publish Date</th>
+                <th width="15%">Audience</th>
+                <th width="10%">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for announcement in announcements %}
+            <tr class="{% if announcement.expires_at and announcement.expires_at < now %}table-secondary{% elif announcement.priority == 'urgent' %}table-danger{% elif announcement.priority == 'high' %}table-warning{% endif %}">
+                <td>
+                    <strong>
+                        <a href="{% url 'announcements:detail' announcement.pk %}" class="text-decoration-none">
+                            {{ announcement.title|truncatechars:50 }}
+                        </a>
+                    </strong>
+                    <br>
+                    <small class="text-muted">
+                        {{ announcement.content|truncatechars:60 }}
+                    </small>
+                </td>
+                <td>
+                    {% if announcement.expires_at and announcement.expires_at < now %}
+                    <span class="badge bg-secondary">Expired</span>
+                    {% elif not announcement.is_published %}
+                    <span class="badge bg-warning">Draft</span>
+                    {% elif announcement.publish_at > now %}
+                    <span class="badge bg-info">Scheduled</span>
+                    {% else %}
+                    <span class="badge bg-success">Published</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge bg-{{ announcement.priority_color }}">
+                        {{ announcement.get_priority_display }}
+                    </span>
+                </td>
+                <td>
+                    {{ announcement.publish_at|date:"M d, Y" }}
+                    <br>
+                    <small class="text-muted">{{ announcement.publish_at|date:"H:i" }}</small>
+                </td>
+                <td>
+                    {% if announcement.is_church_wide %}
+                    <span class="badge bg-primary">Church Wide</span>
+                    {% else %}
+                    <span class="badge bg-success">
+                        {{ announcement.target_groups.count }} group(s)
+                    </span>
+                    {% if announcement.target_members.count %}
+                    <span class="badge bg-warning mt-1 d-block">
+                        {{ announcement.target_members.count }} member(s)
+                    </span>
+                    {% endif %}
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'announcements:detail' announcement.pk %}" class="btn btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        {% if user == announcement.author or user.is_staff %}
+                        <a href="{% url 'announcements:update' announcement.pk %}" class="btn btn-outline-warning">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% endif %}
+                        {% if user.is_staff or user.church_role.role_type in 'super_admin,church_admin' %}
+                        <a href="{% url 'announcements:delete' announcement.pk %}" class="btn btn-outline-danger">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                Previous
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                Next
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">No Announcements Found</h4>
+    <p class="text-muted">
+        {% if request.GET %}
+        No announcements match your filters.
+        {% else %}
+        You haven't created any announcements yet.
+        {% endif %}
+    </p>
+    <a href="{% url 'announcements:create' %}" class="btn btn-primary mt-3">
+        <i class="fas fa-plus"></i> Create Your First Announcement
+    </a>
+</div>
+{% endif %}
