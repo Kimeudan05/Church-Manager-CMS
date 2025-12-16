@@ -1,0 +1,458 @@
+{% extends 'base.html' %}
+
+{% block title %}Projects Dashboard - Church CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-tachometer-alt"></i> Projects Dashboard
+    </h1>
+    <div class="btn-group">
+        <a href="{% url 'projects:list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-list"></i> All Projects
+        </a>
+        <a href="{% url 'projects:calendar' %}" class="btn btn-outline-info">
+            <i class="fas fa-calendar"></i> Calendar
+        </a>
+        <a href="{% url 'projects:gantt' %}" class="btn btn-outline-success">
+            <i class="fas fa-chart-gantt"></i> Gantt Chart
+        </a>
+    </div>
+</div>
+
+<!-- Overall Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_projects }}</h3>
+                <p class="mb-0">Total Projects</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ active_projects }}</h3>
+                <p class="mb-0">Active Projects</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ completed_projects }}</h3>
+                <p class="mb-0">Completed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ task_stats.total_tasks|default:0 }}</h3>
+                <p class="mb-0">Total Tasks</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Budget Overview -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-light border">
+            <div class="card-body text-center">
+                <h5 class="card-title text-muted">Total Budget</h5>
+                <h3 class="text-primary">
+                    KSh {{ budget_stats.total_budget|default:0|floatformat:2 }}
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light border">
+            <div class="card-body text-center">
+                <h5 class="card-title text-muted">Total Spent</h5>
+                <h3 class="text-danger">
+                    KSh {{ budget_stats.total_spent|default:0|floatformat:2 }}
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light border">
+            <div class="card-body text-center">
+                <h5 class="card-title text-muted">Average Budget</h5>
+                <h3 class="text-success">
+                    KSh {{ budget_stats.avg_budget|default:0|floatformat:2 }}
+                </h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column -->
+    <div class="col-md-8">
+        <!-- Recent Projects -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-history"></i> Recent Projects
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_projects %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Group</th>
+                                <th>Status</th>
+                                <th>Progress</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in recent_projects %}
+                            <tr>
+                                <td>
+                                    <strong>{{ project.title }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ project.description|truncatechars:50 }}
+                                    </small>
+                                </td>
+                                <td>{{ project.responsible_group.name }}</td>
+                                <td>
+                                    <span class="badge bg-{% if project.status == 'completed' %}success{% elif project.status == 'ongoing' %}primary{% elif project.status == 'planning' %}info{% else %}secondary{% endif %}">
+                                        {{ project.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-{% if project.progress_percentage < 50 %}warning{% elif project.progress_percentage < 80 %}info{% else %}success{% endif %}" 
+                                             style="width: {{ project.progress_percentage }}%">
+                                        </div>
+                                    </div>
+                                    <small>{{ project.progress_percentage }}%</small>
+                                </td>
+                                <td>
+                                    <a href="{% url 'projects:detail' project.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No recent projects found.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Your Tasks -->
+        {% if user.is_authenticated and user_tasks %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-tasks"></i> Your Tasks
+                    <span class="badge bg-light text-dark">{{ user_tasks|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Project</th>
+                                <th>Due Date</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in user_tasks %}
+                            <tr class="{% if task.due_date < today %}table-danger{% elif task.status == 'completed' %}table-success{% endif %}">
+                                <td>{{ task.title }}</td>
+                                <td>{{ task.project.title }}</td>
+                                <td>
+                                    {% if task.due_date %}
+                                    {{ task.due_date|date:"M d, Y" }}
+                                    {% if task.due_date < today %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">Not set</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if task.priority == 'high' %}danger{% elif task.priority == 'medium' %}warning{% elif task.priority == 'low' %}info{% else %}dark{% endif %}">
+                                        {{ task.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'in_progress' %}primary{% elif task.status == 'blocked' %}danger{% else %}secondary{% endif %}">
+                                        {{ task.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'projects:task_update' task.pk %}" class="btn btn-sm btn-outline-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Projects by Status Chart -->
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie"></i> Projects by Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-md-4">
+        <!-- User Projects (if logged in) -->
+        {% if user.is_authenticated and user_projects %}
+        <div class="card shadow mb-4">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-shield"></i> Projects You Lead
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for project in user_projects %}
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ project.title }}</h6>
+                        <p class="card-text small text-muted mb-1">
+                            {{ project.responsible_group.name }}
+                        </p>
+                        <div class="progress mb-2" style="height: 6px;">
+                            <div class="progress-bar bg-{% if project.progress_percentage < 50 %}warning{% elif project.progress_percentage < 80 %}info{% else %}success{% endif %}" 
+                                 style="width: {{ project.progress_percentage }}%">
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">{{ project.progress_percentage }}% complete</small>
+                            <a href="{% url 'projects:detail' project.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Overdue Tasks -->
+        {% if user.is_authenticated and overdue_tasks %}
+        <div class="card shadow mb-4 border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> Overdue Tasks
+                    <span class="badge bg-light text-dark">{{ overdue_tasks|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for task in overdue_tasks %}
+                <div class="alert alert-danger mb-2">
+                    <h6 class="alert-heading">{{ task.title }}</h6>
+                    <p class="mb-1 small">
+                        <i class="fas fa-project-diagram"></i> {{ task.project.title }}
+                    </p>
+                    <p class="mb-0 small">
+                        <i class="fas fa-calendar"></i> Due: {{ task.due_date|date:"M d, Y" }}
+                    </p>
+                    <a href="{% url 'projects:task_update' task.pk %}" class="btn btn-sm btn-light mt-2">
+                        <i class="fas fa-edit"></i> Update
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Task Statistics -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> Task Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <div class="h3 mb-0 text-primary">{{ task_stats.completed_tasks|default:0 }}</div>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="p-3 bg-light rounded">
+                            <div class="h3 mb-0 text-warning">{{ task_stats.overdue_tasks|default:0 }}</div>
+                            <small class="text-muted">Overdue</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <h6>Completion Rate</h6>
+                    {% if task_stats.total_tasks > 0 %}
+                    <div class="progress" style="height: 15px;">
+                        <div class="progress-bar bg-success" style="width: {% widthratio task_stats.completed_tasks task_stats.total_tasks 100 %}%">
+                            {% widthratio task_stats.completed_tasks task_stats.total_tasks 100 %}%
+                        </div>
+                    </div>
+                    <small class="text-muted">
+                        {{ task_stats.completed_tasks|default:0 }} of {{ task_stats.total_tasks|default:0 }} tasks completed
+                    </small>
+                    {% else %}
+                    <p class="text-muted">No tasks available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'projects:create' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New Project
+                    </a>
+                    <a href="{% url 'projects:list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-list"></i> View All Projects
+                    </a>
+                    <a href="{% url 'projects:calendar' %}" class="btn btn-outline-info">
+                        <i class="fas fa-calendar"></i> Calendar View
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    margin-bottom: 1.5rem;
+}
+
+.progress {
+    margin-bottom: 0.5rem;
+}
+
+.table th {
+    border-top: none;
+}
+
+.alert {
+    margin-bottom: 0.5rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Projects by Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusData = {
+        labels: [
+            {% for item in status_data %}
+                '{{ item.status|title }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for item in status_data %}
+                    {{ item.count }},
+                {% endfor %}
+            ],
+            backgroundColor: [
+                '#28a745', // Success (Completed)
+                '#007bff', // Primary (Ongoing)
+                '#17a2b8', // Info (Planning)
+                '#6c757d'  // Secondary (Cancelled)
+            ],
+            borderWidth: 1
+        }]
+    };
+    
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: statusData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += context.raw + ' projects';
+                            return label;
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Projects by Type Chart (if needed)
+    const typeCtx = document.createElement('canvas');
+    const typeData = {
+        labels: [
+            {% for item in type_data %}
+                '{{ item.project_type|title }}',
+            {% endfor %}
+        ],
+        datasets: [{
+            label: 'Projects by Type',
+            data: [
+                {% for item in type_data %}
+                    {{ item.count }},
+                {% endfor %}
+            ],
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    };
+    
+    // You can add this chart to a new canvas element if needed
+});
+</script>
+{% endblock %}

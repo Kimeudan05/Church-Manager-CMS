@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title|default:"Project Form" }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-{% if submit_text == 'Create Project' %}plus{% else %}edit{% endif %}"></i> 
+                    {{ title|default:"Project Form" }}
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle"></i> Basic Information
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.title|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.description|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.project_type|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.status|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Organization -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-users"></i> Organization
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.responsible_group|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.project_leader|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.team_members|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Timeline -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-calendar"></i> Timeline
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    {{ form.start_date|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    {{ form.target_end_date|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    {{ form.progress_percentage|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Budget & Milestones -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line"></i> Budget & Planning
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.budget_amount|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.milestones|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Errors -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Please fix the errors below:</h5>
+                        <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if object %}{% url 'projects:detail' object.pk %}{% else %}{% url 'projects:list' %}{% endif %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        
+                        <div class="btn-group">
+                            <button type="submit" name="save" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ submit_text|default:"Save Project" }}
+                            </button>
+                            
+                            {% if not object %}
+                            <button type="submit" name="save_and_add_another" class="btn btn-outline-primary">
+                                <i class="fas fa-plus"></i> Save & Add Another
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Date validation
+    const startDateField = document.querySelector('#id_start_date');
+    const targetDateField = document.querySelector('#id_target_end_date');
+    
+    if (startDateField && targetDateField) {
+        startDateField.addEventListener('change', function() {
+            if (this.value && targetDateField.value && this.value > targetDateField.value) {
+                alert('Start date cannot be after target end date.');
+                this.value = '';
+            }
+        });
+        
+        targetDateField.addEventListener('change', function() {
+            if (this.value && startDateField.value && this.value < startDateField.value) {
+                alert('Target end date cannot be before start date.');
+                this.value = '';
+            }
+        });
+    }
+    
+    // Progress percentage validation
+    const progressField = document.querySelector('#id_progress_percentage');
+    if (progressField) {
+        progressField.addEventListener('change', function() {
+            const value = parseInt(this.value);
+            if (value < 0 || value > 100) {
+                alert('Progress must be between 0 and 100.');
+                this.value = Math.min(100, Math.max(0, value));
+            }
+        });
+    }
+    
+    // Initialize Select2 for team members (if using Select2)
+    if (typeof $.fn.select2 !== 'undefined') {
+        $('#id_team_members').select2({
+            placeholder: 'Select team members...',
+            allowClear: true
+        });
+    }
+});
+</script>
+{% endblock %}

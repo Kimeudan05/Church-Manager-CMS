@@ -1,0 +1,438 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Projects - Church CMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-project-diagram"></i> Projects
+    </h1>
+    
+    {% if user.is_authenticated  and user.is_staff %}
+    <a href="{% url 'projects:create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> New Project
+    </a>
+    {% else %}
+    <p></p>
+    {% endif %}
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_projects }}</h3>
+                <p class="mb-0">Total Projects</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ active_projects }}</h3>
+                <p class="mb-0">Active</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ completed_projects }}</h3>
+                <p class="mb-0">Completed</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body text-center">
+                <h3 class="mb-0">
+                    {% if upcoming_deadlines %}{{ upcoming_deadlines|length }}{% else %}0{% endif %}
+                </h3>
+                <p class="mb-0">Upcoming Deadlines</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="card shadow mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0">
+            <i class="fas fa-filter"></i> Filter Projects
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                {{ filter_form.project_type|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.status|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.responsible_group|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.search|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.start_date_from|as_crispy_field }}
+            </div>
+            <div class="col-md-3">
+                {{ filter_form.start_date_to|as_crispy_field }}
+            </div>
+            <div class="col-md-6">
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Apply Filters
+                    </button>
+                    <a href="{% url 'projects:list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </h5>
+                <a href="{% url 'projects:dashboard' %}" class="btn btn-light mt-2">
+                    <i class="fas fa-chart-bar"></i> View Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-calendar"></i> Calendar
+                </h5>
+                <a href="{% url 'projects:calendar' %}" class="btn btn-light mt-2">
+                    <i class="fas fa-calendar-alt"></i> View Calendar
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-gantt"></i> Gantt Chart
+                </h5>
+                <a href="{% url 'projects:gantt' %}" class="btn btn-light mt-2">
+                    <i class="fas fa-tasks"></i> View Timeline
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upcoming Deadlines -->
+{% if upcoming_deadlines %}
+<div class="card shadow mb-4">
+    <div class="card-header bg-warning text-dark">
+        <h5 class="mb-0">
+            <i class="fas fa-exclamation-circle"></i> Upcoming Deadlines (Next 7 Days)
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            {% for project in upcoming_deadlines %}
+            <div class="col-md-4 mb-3">
+                <div class="card border-warning">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <a href="{% url 'projects:detail' project.pk %}" class="text-decoration-none">
+                                {{ project.title }}
+                            </a>
+                        </h6>
+                        <p class="card-text small mb-1">
+                            <i class="fas fa-calendar"></i> 
+                            Due: {{ project.target_end_date|date:"M d, Y" }}
+                        </p>
+                        <p class="card-text small mb-2">
+                            <i class="fas fa-users"></i> 
+                            Group: {{ project.responsible_group.name }}
+                        </p>
+                        <div class="progress" style="height: 8px;">
+                            <div class="progress-bar bg-{% if project.progress_percentage < 50 %}warning{% elif project.progress_percentage < 80 %}info{% else %}success{% endif %}" 
+                                 style="width: {{ project.progress_percentage }}%">
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ project.progress_percentage }}% complete</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Projects Grid -->
+<div class="row">
+    {% for project in projects %}
+    <div class="col-md-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header bg-{% if project.status == 'completed' %}success{% elif project.status == 'ongoing' %}primary{% elif project.status == 'planning' %}info{% else %}secondary{% endif %} text-white d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-0">
+                        <a href="{% url 'projects:detail' project.pk %}" class="text-white text-decoration-none">
+                            {{ project.title|truncatechars:40 }}
+                        </a>
+                    </h5>
+                    <small class="d-block mt-1">
+                        <i class="fas fa-users"></i> {{ project.responsible_group.name }}
+                    </small>
+                </div>
+                <span class="badge bg-light text-dark">
+                    {{ project.get_status_display }}
+                </span>
+            </div>
+            
+            <div class="card-body">
+                <p class="card-text">
+                    {{ project.description|truncatechars:150 }}
+                </p>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-calendar"></i> 
+                            <strong>Start:</strong> 
+                            {% if project.start_date %}
+                                {{ project.start_date|date:"M d, Y" }}
+                            {% else %}
+                                <span class="text-warning">Not set</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-flag-checkered"></i> 
+                            <strong>Target:</strong> 
+                            {% if project.target_end_date %}
+                                {{ project.target_end_date|date:"M d, Y" }}
+                            {% else %}
+                                <span class="text-warning">Not set</span>
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-user"></i> 
+                            <strong>Leader:</strong> 
+                            {{ project.project_leader.get_full_name|default:project.project_leader.username }}
+                        </small>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">
+                            <i class="fas fa-users"></i> 
+                            <strong>Team:</strong> 
+                            {{ project.team_members.count }} members
+                        </small>
+                    </div>
+                </div>
+                
+                {% if project.budget_amount %}
+                <div class="mb-3">
+                    <small class="text-muted">
+                        <i class="fas fa-money-bill"></i> 
+                        <strong>Budget:</strong> KSh {{ project.budget_amount|floatformat:2 }}
+                    </small>
+                </div>
+                {% endif %}
+                
+                <!-- Progress Bar -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">Progress</small>
+                        <small class="text-muted">{{ project.progress_percentage }}%</small>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar bg-{% if project.progress_percentage < 50 %}warning{% elif project.progress_percentage < 80 %}info{% else %}success{% endif %}" 
+                             style="width: {{ project.progress_percentage }}%">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tags/Badges -->
+                <div class="mb-3">
+                    <span class="badge bg-secondary">
+                        {{ project.get_project_type_display }}
+                    </span>
+                    {% if project.milestones %}
+                    <span class="badge bg-info">
+                        <i class="fas fa-flag"></i> {{ project.milestones|linebreaksbr|wordcount }} milestones
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-clock"></i> 
+                            Updated {{ project.updated_at|timesince }} ago
+                        </small>
+                    </div>
+                    
+                    <div class="btn-group">
+                        <a href="{% url 'projects:detail' project.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        
+                        {% if user.is_staff or user == project.project_leader %}
+                        <a href="{% url 'projects:update' project.pk %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No projects found matching your criteria.
+            {% if user.is_authenticated %}
+            <a href="{% url 'projects:create' %}" class="alert-link">Create your first project</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                Previous
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                Next
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+<!-- Statistics Section -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie"></i> Projects by Status
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for status in status_counts %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>{{ status.status|title }}</span>
+                        <span class="badge bg-primary">{{ status.count }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar" style="width: {% widthratio status.count total_projects 100 %}%"></div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">No data available</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> Projects by Type
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for type in type_counts %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>{{ type.project_type|title }}</span>
+                        <span class="badge bg-info">{{ type.count }}</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-info" style="width: {% widthratio type.count total_projects 100 %}%"></div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">No data available</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default dates for filter
+    const startDateFrom = document.querySelector('#id_start_date_from');
+    const startDateTo = document.querySelector('#id_start_date_to');
+    
+    if (startDateFrom && !startDateFrom.value) {
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        startDateFrom.value = threeMonthsAgo.toISOString().split('T')[0];
+    }
+    
+    if (startDateTo && !startDateTo.value) {
+        const today = new Date().toISOString().split('T')[0];
+        startDateTo.value = today;
+    }
+    
+    // Add tooltips to progress bars
+    const progressBars = document.querySelectorAll('.progress-bar');
+    progressBars.forEach(bar => {
+        bar.addEventListener('mouseover', function() {
+            const percentage = this.style.width;
+            this.setAttribute('title', `${percentage} complete`);
+        });
+    });
+});
+</script>
+{% endblock %}

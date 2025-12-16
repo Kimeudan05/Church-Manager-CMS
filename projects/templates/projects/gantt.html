@@ -1,0 +1,539 @@
+{% extends 'base.html' %}
+
+{% block title %}Projects Gantt Chart - Church CMS{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/frappe-gantt@0.5.0/dist/frappe-gantt.css" rel="stylesheet" />
+
+
+<style>
+    #gantt {
+        margin: 20px 0;
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        overflow-x: auto;
+        min-height: 500px; /* Ensures enough vertical space */
+    }
+    
+    .gantt-container {
+        min-width: 1000px;
+    }
+    
+    .task-info {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    
+    .task-bar.project {
+        fill: #007bff;
+        rx: 3;
+        ry: 3;
+    }
+    
+    .task-bar.task {
+        fill: #28a745;
+        rx: 3;
+        ry: 3;
+    }
+    
+    .task-bar.overdue {
+        fill: #dc3545;
+    }
+    
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .legend-color {
+        width: 15px;
+        height: 15px;
+        margin-right: 5px;
+        border-radius: 3px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-chart-gantt"></i> Projects Gantt Chart
+    </h1>
+    <div class="btn-group">
+        <a href="{% url 'projects:list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-list"></i> List View
+        </a>
+        <a href="{% url 'projects:dashboard' %}" class="btn btn-outline-info">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+        <a href="{% url 'projects:calendar' %}" class="btn btn-outline-success">
+            <i class="fas fa-calendar"></i> Calendar
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <!-- Filters -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter"></i> Filters
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Status:</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="all">All Statuses</option>
+                        <option value="planning">Planning</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Group:</label>
+                    <select class="form-select" id="groupFilter">
+                        <option value="all">All Groups</option>
+                        {% for project in gantt_data %}
+                        <option value="{{ project.id }}">{{ project.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">View Mode:</label>
+                    <select class="form-select" id="viewMode">
+                        <option value="Quarter Day">Quarter Day</option>
+                        <option value="Half Day">Half Day</option>
+                        <option value="Day" selected>Day</option>
+                        <option value="Week">Week</option>
+                        <option value="Month">Month</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary w-100" id="applyFilters">
+                    <i class="fas fa-sync"></i> Apply Filters
+                </button>
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Legend
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #007bff;"></div>
+                    <span>Projects</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #28a745;"></div>
+                    <span>Tasks</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #dc3545;"></div>
+                    <span>Overdue</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ffc107;"></div>
+                    <span>High Priority</span>
+                </div>
+                <hr>
+                <p class="small text-muted mb-0">
+                    <i class="fas fa-mouse-pointer"></i> Click on bars for details<br>
+                    <i class="fas fa-arrows-alt-h"></i> Drag to resize<br>
+                    <i class="fas fa-arrows-alt"></i> Drag to move
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card shadow">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-timeline"></i> Project Timeline
+                </h5>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary" id="zoomIn" title="Zoom In">
+                        <i class="fas fa-search-plus"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" id="zoomOut" title="Zoom Out">
+                        <i class="fas fa-search-minus"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" id="fitView" title="Fit View">
+                        <i class="fas fa-expand-alt"></i> Fit View
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="gantt"></div>
+            </div>
+        </div>
+        
+        <!-- Selected Task Info -->
+        <div class="card shadow mt-4" id="taskInfoCard" style="display: none;">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Selected Item Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="taskInfo"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-line"></i> Timeline Stats
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-4">{{ gantt_data|length }}</div>
+                    <p class="text-muted">Total Projects</p>
+                </div>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded">
+                            <div class="h5 mb-0">
+                                {{ active_projects }}
+                            </div>
+                            <small class="text-muted">Active</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded">
+                            <div class="h5 mb-0">
+                                {{ completed_projects }}
+                            </div>
+                            <small class="text-muted">Completed</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-list"></i> Project Timeline Summary
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Duration</th>
+                                <th>Progress</th>
+                                <th>Tasks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for project in gantt_data %}
+                            <tr>
+                                <td>
+                                    <strong>{{ project.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ project.status|title }}</small>
+                                </td>
+                                <td>{{ project.start|date:"M d, Y" }}</td>
+                                <td>{{ project.end|date:"M d, Y" }}</td>
+                                <td>
+                                    {% with start=project.start|date:"Y-m-d" end=project.end|date:"Y-m-d" %}
+                                    {% now "Y-m-d" as today %}
+                                    {% if end < today %}
+                                    <span class="badge bg-success">Completed</span>
+                                    {% elif start > today %}
+                                    <span class="badge bg-info">Upcoming</span>
+                                    {% else %}
+                                    <span class="badge bg-primary">In Progress</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar" style="width: {{ project.progress }}%"></div>
+                                    </div>
+                                    <small>{{ project.progress }}%</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ project.tasks|length }}</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/frappe-gantt@0.5.0/dist/frappe-gantt.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // Prepare Gantt chart data
+    const tasks = [
+    {% for project in gantt_data %}
+        {
+            id: '{{ project.id }}',
+            name: '{{ project.name|escapejs }}',
+            start: '{{ project.start|date:"Y-m-d" }}',
+            end: '{{ project.end|date:"Y-m-d" }}',
+            progress: {{ project.progress }},
+            custom_class: 'project',
+            project_id: '{{ project.id }}',
+            type: 'project',
+            status: '{{ project.status }}'
+        },
+        {% for task in project.tasks %}
+        {
+            id: 'task_{{ task.id }}',
+            name: '{{ task.name|escapejs }}',
+            start: '{{ task.start|date:"Y-m-d" }}',
+            end: '{{ task.end|date:"Y-m-d" }}',
+            progress: {{ task.progress }},
+            dependencies: '{{ project.id }}',
+            custom_class: 'task',
+            project_id: '{{ project.id }}',
+            type: 'task',
+            status: '{{ task.status }}'
+        },
+        {% endfor %}
+    {% endfor %}
+    ];
+    console.log(tasks);
+
+    console.log('Gantt:', window.Gantt);
+if (!window.Gantt) {
+  alert('frappe-gantt library failed to load!');
+  return;
+}
+
+
+    // Initialize Gantt chart with default view mode "Day"
+    const gantt = new Gantt("#gantt", tasks, {
+        header_height: 50,
+        column_width: 30,
+        step: 24,
+        view_modes: ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'],
+        bar_height: 20,
+        bar_corner_radius: 3,
+        arrow_curve: 5,
+        padding: 18,
+        view_mode: 'Day',
+        date_format: 'YYYY-MM-DD',
+        custom_popup_html: function(task) {
+            const statusColors = {
+                'completed': 'success',
+                'ongoing': 'primary',
+                'planning': 'info',
+                'cancelled': 'secondary'
+            };
+            
+            return `
+                <div class="popup-container" style="padding: 10px; min-width: 200px;">
+                    <h6 style="margin: 0 0 10px 0; color: #333;">${task.name}</h6>
+                    <div style="margin-bottom: 5px;">
+                        <strong>Type:</strong> ${task.type === 'project' ? 'Project' : 'Task'}
+                    </div>
+                    <div style="margin-bottom: 5px;">
+                        <strong>Start:</strong> ${task._start.format('MMM DD, YYYY')}
+                    </div>
+                    <div style="margin-bottom: 5px;">
+                        <strong>End:</strong> ${task._end.format('MMM DD, YYYY')}
+                    </div>
+                    <div style="margin-bottom: 5px;">
+                        <strong>Progress:</strong> 
+                        <div class="progress" style="height: 8px; margin-top: 3px;">
+                            <div class="progress-bar" style="width: ${task.progress}%"></div>
+                        </div>
+                        <small>${task.progress}%</small>
+                    </div>
+                    ${task.status ? `
+                    <div style="margin-bottom: 5px;">
+                        <strong>Status:</strong> 
+                        <span class="badge bg-${statusColors[task.status] || 'secondary'}">
+                            ${task.status}
+                        </span>
+                    </div>` : ''}
+                    <div style="margin-top: 10px;">
+                        <a href="/projects/${task.project_id}/" class="btn btn-sm btn-primary" target="_blank">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            `;
+        },
+        on_click: function(task) {
+            showTaskInfo(task);
+        },
+        on_date_change: function(task, start, end) {
+            console.log('Task dates changed:', task, start, end);
+            // AJAX update code here if needed
+        },
+        on_progress_change: function(task, progress) {
+            console.log('Task progress changed:', task, progress);
+            // AJAX update code here if needed
+        },
+        on_view_change: function(mode) {
+            console.log('View mode changed to:', mode);
+            // Update view mode select to match
+            document.getElementById('viewMode').value = mode;
+        }
+    });
+    
+    // Show task info when clicked
+    function showTaskInfo(task) {
+        const taskInfoCard = document.getElementById('taskInfoCard');
+        const taskInfo = document.getElementById('taskInfo');
+        
+        const statusColors = {
+            'completed': 'success',
+            'ongoing': 'primary',
+            'planning': 'info',
+            'cancelled': 'secondary'
+        };
+        
+        let html = `
+            <div class="row">
+                <div class="col-md-8">
+                    <h5>${task.name}</h5>
+                    <dl class="row">
+                        <dt class="col-sm-3">Type:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-${task.type === 'project' ? 'primary' : 'success'}">
+                                ${task.type === 'project' ? 'Project' : 'Task'}
+                            </span>
+                        </dd>
+                        
+                        <dt class="col-sm-3">Start Date:</dt>
+                        <dd class="col-sm-9">${task._start.format('MMMM DD, YYYY')}</dd>
+                        
+                        <dt class="col-sm-3">End Date:</dt>
+                        <dd class="col-sm-9">${task._end.format('MMMM DD, YYYY')}</dd>
+                        
+                        <dt class="col-sm-3">Duration:</dt>
+                        <dd class="col-sm-9">${task._end.diff(task._start, 'days')} days</dd>
+                        
+                        <dt class="col-sm-3">Progress:</dt>
+                        <dd class="col-sm-9">
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar" style="width: ${task.progress}%"></div>
+                            </div>
+                            ${task.progress}%
+                        </dd>
+                        
+                        ${task.status ? `
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-${statusColors[task.status] || 'secondary'}">
+                                ${task.status}
+                            </span>
+                        </dd>` : ''}
+                    </dl>
+                </div>
+                <div class="col-md-4 text-center">
+                    <div class="mb-3">
+                        <div class="display-4">${task.progress}%</div>
+                        <p class="text-muted">Complete</p>
+                    </div>
+                    <a href="/projects/${task.project_id}/" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt"></i> View Project
+                    </a>
+                </div>
+            </div>
+        `;
+        
+        taskInfo.innerHTML = html;
+        taskInfoCard.style.display = 'block';
+    }
+    
+    // Filter controls
+    document.getElementById('applyFilters').addEventListener('click', function() {
+        const status = document.getElementById('statusFilter').value;
+        const group = document.getElementById('groupFilter').value;
+        const viewMode = document.getElementById('viewMode').value;
+        
+        let filteredTasks = tasks;
+        
+        // Filter by status (only filter projects by status, show all tasks linked to projects)
+        if (status !== 'all') {
+            filteredTasks = filteredTasks.filter(task => {
+                if (task.type === 'project') {
+                    return task.status === status;
+                }
+                return true; // keep all tasks
+            });
+        }
+        
+        // Filter by group/project
+        if (group !== 'all') {
+            filteredTasks = filteredTasks.filter(task => {
+                return task.project_id === group || task.id === group;
+            });
+        }
+        
+        gantt.refresh(filteredTasks);
+        gantt.change_view_mode(viewMode);
+    });
+    
+    // View mode select sync
+    document.getElementById('viewMode').addEventListener('change', function() {
+        gantt.change_view_mode(this.value);
+    });
+    
+    // Zoom controls
+    document.getElementById('zoomIn').addEventListener('click', function() {
+        const modes = ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'];
+        const currentIndex = modes.indexOf(gantt.options.view_mode);
+        if (currentIndex < modes.length - 1) {
+            gantt.change_view_mode(modes[currentIndex + 1]);
+            document.getElementById('viewMode').value = modes[currentIndex + 1];
+        }
+    });
+    
+    document.getElementById('zoomOut').addEventListener('click', function() {
+        const modes = ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'];
+        const currentIndex = modes.indexOf(gantt.options.view_mode);
+        if (currentIndex > 0) {
+            gantt.change_view_mode(modes[currentIndex - 1]);
+            document.getElementById('viewMode').value = modes[currentIndex - 1];
+        }
+    });
+    
+    document.getElementById('fitView').addEventListener('click', function() {
+        gantt.fit_view();
+    });
+    
+});
+</script>
+{% endblock %}

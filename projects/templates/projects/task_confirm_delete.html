@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Task - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-trash"></i> Delete Task
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h5><i class="fas fa-exclamation-triangle"></i> Warning!</h5>
+                    <p class="mb-0">
+                        You are about to permanently delete the task <strong>"{{ task.title }}"</strong> from the project <strong>"{{ task.project.title }}"</strong>.
+                        This action cannot be undone.
+                    </p>
+                </div>
+                
+                <!-- Task Information -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Task Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5>{{ task.title }}</h5>
+                                <dl class="row">
+                                    <dt class="col-sm-4">Assigned to:</dt>
+                                    <dd class="col-sm-8">{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</dd>
+                                    
+                                    <dt class="col-sm-4">Priority:</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge bg-{% if task.priority == 'high' %}danger{% elif task.priority == 'medium' %}warning{% elif task.priority == 'low' %}info{% else %}dark{% endif %}">
+                                            {{ task.get_priority_display }}
+                                        </span>
+                                    </dd>
+
+                                    <dt class="col-sm-4">Status:</dt>
+                                    <dd class="col-sm-8">
+                                        <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'in_progress' %}primary{% elif task.status == 'blocked' %}danger{% else %}secondary{% endif %}">
+                                            {{ task.get_status_display }}
+                                        </span>
+                                    </dd>
+                                    
+                                    <dt class="col-sm-4">Due Date:</dt>
+                                    <dd class="col-sm-8">{{ task.due_date|date:"M d, Y" }}</dd>
+                                    
+                                    <dt class="col-sm-4">Created:</dt>
+                                    <dd class="col-sm-8">{{ task.created_at|date:"M d, Y" }}</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- What will be deleted -->
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-circle"></i> This will delete:
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6>Task Data:</h6>
+                                <ul>
+                                    <li>Task details and description</li>
+                                    <li>Assigned user and due date</li>
+                                    <li>Status and progress tracking</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Confirmation Form -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmDeleteTask" required>
+                        <label class="form-check-label" for="confirmDeleteTask">
+                            I understand that the task <strong>"{{ task.title }}"</strong> will be deleted permanently.
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirmDeleteIrreversible" required>
+                        <label class="form-check-label text-danger" for="confirmDeleteIrreversible">
+                            <strong>I understand that this action is permanent and cannot be undone.</strong>
+                        </label>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'projects:detail' task.project.pk %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Cancel
+                        </a>
+                        
+                        <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                            <i class="fas fa-trash"></i> Delete Task Permanently
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const deleteButton = document.querySelector('#deleteButton');
+    
+    function updateDeleteButton() {
+        const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+        deleteButton.disabled = !allChecked;
+    }
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateDeleteButton);
+    });
+    
+    // Prevent accidental double-clicks
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function() {
+            deleteButton.disabled = true;
+            deleteButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        });
+    }
+    
+    // Add warning on page leave if form is filled
+    let formChanged = false;
+    const formInputs = form.querySelectorAll('input, textarea, select');
+    formInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            formChanged = true;
+        });
+    });
+    
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        }
+    });
+});
+</script>
+{% endblock %}

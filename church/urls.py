@@ -20,7 +20,7 @@ urlpatterns = [
     # path('announcements/', include('announcements.urls')),
     path("sermons/", include("sermons.urls")),
     # path('curriculum/', include('curriculum.urls')),
-    # path('projects/', include('projects.urls')),
+    path("projects/", include("projects.urls")),
     path("dashboard/", include("dashboard.urls")),
     # Third-party
     # path("api-auth/", include("rest_framework.urls")),

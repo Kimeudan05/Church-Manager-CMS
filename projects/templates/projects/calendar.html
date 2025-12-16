@@ -1,0 +1,337 @@
+{% extends 'base.html' %}
+
+{% block title %}Projects Calendar - Church CMS{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+<style>
+    #calendar {
+        background-color: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    
+    .fc-event {
+        cursor: pointer;
+    }
+    
+    .fc-event.project {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    .fc-event.task {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    
+    .fc-event.overdue {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    
+    .fc-toolbar-title {
+        font-size: 1.5em;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>
+        <i class="fas fa-calendar-alt"></i> Projects Calendar
+    </h1>
+    <div class="btn-group">
+        <a href="{% url 'projects:list' %}" class="btn btn-outline-primary">
+            <i class="fas fa-list"></i> List View
+        </a>
+        <a href="{% url 'projects:dashboard' %}" class="btn btn-outline-info">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+        <a href="{% url 'projects:gantt' %}" class="btn btn-outline-success">
+            <i class="fas fa-chart-gantt"></i> Gantt Chart
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-filter"></i> Calendar Filters
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="showProjects" checked>
+                    <label class="form-check-label" for="showProjects">
+                        <span class="badge bg-primary">Projects</span>
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="showTasks" checked>
+                    <label class="form-check-label" for="showTasks">
+                        <span class="badge bg-success">Tasks</span>
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="showOverdue" checked>
+                    <label class="form-check-label" for="showOverdue">
+                        <span class="badge bg-danger">Overdue</span>
+                    </label>
+                </div>
+                <hr>
+                <div class="mb-2">
+                    <label class="form-label">View:</label>
+                    <select class="form-select form-select-sm" id="calendarView">
+                        <option value="dayGridMonth">Month</option>
+                        <option value="timeGridWeek">Week</option>
+                        <option value="timeGridDay">Day</option>
+                        <option value="listMonth">List</option>
+                    </select>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary w-100" id="todayBtn">
+                    <i class="fas fa-calendar-day"></i> Today
+                </button>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Legend
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <span class="badge bg-primary me-2">&nbsp;</span>
+                    <small>Projects</small>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-success me-2">&nbsp;</span>
+                    <small>Tasks</small>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-danger me-2">&nbsp;</span>
+                    <small>Overdue</small>
+                </div>
+                <div class="mb-2">
+                    <span class="badge bg-warning me-2">&nbsp;</span>
+                    <small>High Priority</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card shadow">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar"></i> Project Timeline
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="calendar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Details Modal -->
+<div class="modal fade" id="eventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="eventDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary" id="eventLink">View Details</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize calendar
+    const calendarEl = document.getElementById('calendar');
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+        },
+        events: [
+            // Projects
+            {% for project in projects_json %}
+            {
+                id: 'project_{{ project.id }}',
+                title: '{{ project.title }}',
+                start: '{{ project.start_date|date:"Y-m-d" }}',
+                end: '{{ project.target_end_date|date:"Y-m-d" }}',
+                allDay: true,
+                color: '#007bff',
+                className: 'project',
+                extendedProps: {
+                    type: 'project',
+                    status: '{{ project.status }}',
+                    description: '{{ project.description|escapejs }}',
+                    url: '{% url "projects:detail" project.id %}'
+                }
+            },
+            {% endfor %}
+            
+            // Tasks
+            {% for task in tasks_json %}
+            {
+                id: 'task_{{ task.id }}',
+                title: '{{ task.title }}',
+                start: '{{ task.due_date|date:"Y-m-d" }}',
+                allDay: true,
+                color: '{% if task.priority == "high" %}#dc3545{% else %}#28a745{% endif %}',
+                className: 'task {% if task.priority == "high" %}overdue{% endif %}',
+                extendedProps: {
+                    type: 'task',
+                    priority: '{{ task.priority }}',
+                    status: '{{ task.status }}',
+                    project: '{{ task.project__title }}',
+                    url: '{% url "projects:detail" task.id %}'
+                }
+            },
+            {% endfor %}
+        ],
+        eventClick: function(info) {
+            const event = info.event;
+            const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+            const details = document.getElementById('eventDetails');
+            const link = document.getElementById('eventLink');
+            const title = document.getElementById('eventTitle');
+            
+            title.textContent = event.title;
+            
+            if (event.extendedProps.type === 'project') {
+                details.innerHTML = `
+                    <dl class="row">
+                        <dt class="col-sm-3">Type:</dt>
+                        <dd class="col-sm-9">Project</dd>
+                        
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-${event.extendedProps.status === 'completed' ? 'success' : event.extendedProps.status === 'ongoing' ? 'primary' : 'info'}">
+                                ${event.extendedProps.status}
+                            </span>
+                        </dd>
+                        
+                        <dt class="col-sm-3">Start:</dt>
+                        <dd class="col-sm-9">${event.start ? event.start.toLocaleDateString() : 'N/A'}</dd>
+                        
+                        <dt class="col-sm-3">End:</dt>
+                        <dd class="col-sm-9">${event.end ? event.end.toLocaleDateString() : 'N/A'}</dd>
+                        
+                        <dt class="col-sm-3">Description:</dt>
+                        <dd class="col-sm-9">${event.extendedProps.description || 'No description'}</dd>
+                    </dl>
+                `;
+            } else {
+                details.innerHTML = `
+                    <dl class="row">
+                        <dt class="col-sm-3">Type:</dt>
+                        <dd class="col-sm-9">Task</dd>
+                        
+                        <dt class="col-sm-3">Project:</dt>
+                        <dd class="col-sm-9">${event.extendedProps.project}</dd>
+                        
+                        <dt class="col-sm-3">Priority:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-${event.extendedProps.priority === 'high' ? 'danger' : event.extendedProps.priority === 'medium' ? 'warning' : 'info'}">
+                                ${event.extendedProps.priority}
+                            </span>
+                        </dd>
+                        
+                        <dt class="col-sm-3">Status:</dt>
+                        <dd class="col-sm-9">
+                            <span class="badge bg-${event.extendedProps.status === 'completed' ? 'success' : event.extendedProps.status === 'in_progress' ? 'primary' : 'secondary'}">
+                                ${event.extendedProps.status}
+                            </span>
+                        </dd>
+                        
+                        <dt class="col-sm-3">Due Date:</dt>
+                        <dd class="col-sm-9">${event.start ? event.start.toLocaleDateString() : 'N/A'}</dd>
+                    </dl>
+                `;
+            }
+            
+            link.href = event.extendedProps.url;
+            modal.show();
+        },
+        eventDidMount: function(info) {
+            // Add tooltip
+            if (info.event.extendedProps.type === 'project') {
+                info.el.title = `Project: ${info.event.title}\nStatus: ${info.event.extendedProps.status}`;
+            } else {
+                info.el.title = `Task: ${info.event.title}\nProject: ${info.event.extendedProps.project}\nPriority: ${info.event.extendedProps.priority}`;
+            }
+        }
+    });
+    
+    calendar.render();
+    
+    // Filter controls
+    document.getElementById('showProjects').addEventListener('change', function() {
+        const events = calendar.getEvents();
+        events.forEach(event => {
+            if (event.extendedProps.type === 'project') {
+                event.setProp('display', this.checked ? 'auto' : 'none');
+            }
+        });
+    });
+    
+    document.getElementById('showTasks').addEventListener('change', function() {
+        const events = calendar.getEvents();
+        events.forEach(event => {
+            if (event.extendedProps.type === 'task') {
+                event.setProp('display', this.checked ? 'auto' : 'none');
+            }
+        });
+    });
+    
+    document.getElementById('showOverdue').addEventListener('change', function() {
+        const events = calendar.getEvents();
+        events.forEach(event => {
+            if (event.extendedProps.type === 'task' && event.extendedProps.priority === 'high') {
+                event.setProp('display', this.checked ? 'auto' : 'none');
+            }
+        });
+    });
+    
+    // View selector
+    document.getElementById('calendarView').addEventListener('change', function() {
+        calendar.changeView(this.value);
+    });
+    
+    // Today button
+    document.getElementById('todayBtn').addEventListener('click', function() {
+        calendar.today();
+    });
+    
+    // Set initial view from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const view = urlParams.get('view');
+    if (view && ['dayGridMonth', 'timeGridWeek', 'timeGridDay', 'listMonth'].includes(view)) {
+        calendar.changeView(view);
+        document.getElementById('calendarView').value = view;
+    }
+});
+</script>
+{% endblock %}

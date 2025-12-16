@@ -1,64 +1,71 @@
-<nav class ="navbar navbar-expand-lg navbar-dark bg-primary fixed-top mb-5">
+<nav class ="navbar navbar-expand-lg navbar-primary navbar-dark bg-secondary fixed-top mb-5 text-light">
     <div class="container">
         <a href="{% url 'home' %}" class="navbar-brand">
             <i class="fas fa-church"></i>Church CMS
         </a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
 
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
+            <ul class="navbar-nav me-auto nav">
+
+            <!-- Home is always visible -->
+            <li class="nav-item">
+                <a href="{% url 'home' %}" class="nav-link">Home</a>
+            </li>
+
+            {% if not user.is_authenticated %}
+                
+
+            {% else %}
+                <!-- AUTHENTICATED USERS ONLY -->
+
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">
+                        Groups
+                    </a>
+                    <ul class="dropdown-menu bg-secondary-subtle">
+                        <li>
+                            <a href="{% url 'groups:list' %}" class="dropdown-item">
+                                All Groups
+                            </a>
+                        </li>
+                        {% for group in all_groups %}
+                            <li>
+                                <a href="{% url 'groups:detail' group.id %}" class="dropdown-item">
+                                    {{ group.name }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                <!-- Projects -->
                 <li class="nav-item">
-                    <a href="{% url 'home' %}" class="nav-link">Home</a></li>
-                    <li class="nav-item dropdown">
-                        <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">
-                            Groups
-                        </a>
-                        <ul class="dropdown-menu bg-secondary-subtle">
-                           <li> <a href="{% url 'groups:list' %}" class="text-decoration-none ms-5 dropdown-item">
-                            All Groups
-                        </a></li>
-                            {% for group in all_groups %}
-                            <li><a href="{% url 'groups:detail' group.id %}" class="dropdown-item p-2"> {{group.name}} </a></li>
-                            {% endfor %}
-                        </ul>
-                    </li>
-                     <li class="nav-item">
+                    <a href="{% url 'projects:list' %}" class="nav-link">Projects</a>
+                </li>
+
+                <li class="nav-item">
                     <a class="nav-link" href="{% url 'events:list' %}">Events</a>
                 </li>
-                        <li class="nav-item dropdown">
-                            <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">
-                                Sermons
-                            </a>
-                            <ul class="dropdown-menu bg-secondary-subtle">
-                                <li>
-                                    <a href="{% url 'sermons:list' %}" class="dropdown-item ms-3">
-                                        All Sermons
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{% url 'sermons:archive' %}" class="dropdown-item ms-3">
-                                        Archive
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="{% url 'sermons:series_list' %}" class="dropdown-item ms-3">
-                                        Series
-                                    </a>
-                                </li>
-                                {% if user.is_staff %}
-                                <li>
-                                    <a href="{% url 'sermons:create' %}" class="dropdown-item ms-3">
-                                        Add Sermon
-                                    </a>
-                                </li>
-                                {% endif %}
-                            </ul>
-                        </li>
 
-                
-            </ul>
+                <li class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" role="button" data-bs-toggle="dropdown">
+                        Sermons
+                    </a>
+                    <ul class="dropdown-menu bg-secondary-subtle">
+                        <li><a href="{% url 'sermons:list' %}" class="dropdown-item">All Sermons</a></li>
+                        <li><a href="{% url 'sermons:archive' %}" class="dropdown-item">Archive</a></li>
+                        <li><a href="{% url 'sermons:series_list' %}" class="dropdown-item">Series</a></li>
+                        {% if user.is_staff %}
+                            <li><a href="{% url 'sermons:create' %}" class="dropdown-item">Add Sermon</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+
+            {% endif %}
+        </ul>
+
 
             <ul class="navbar-nav">
     {% if user.is_authenticated %}
@@ -125,8 +132,8 @@
         <li class="nav-item">
             <a href="{% url 'accounts:register' %}" class="nav-link">Register</a>
         </li>
-    {% endif %}
-</ul>
+        {% endif %}
+        </ul>
 
         </div>
     </div>

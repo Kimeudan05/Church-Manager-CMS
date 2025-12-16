@@ -1,28 +1,7 @@
 from django.db import models
-from django.conf import settings
+from groups.models import ChurchGroup
+from accounts.models import CustomUser
 from django.core.validators import MinValueValidator, MaxValueValidator
-
-
-class ChurchGroup(models.Model):
-    """Groups in the church (Men, Women, Youth, etc.)"""
-
-    GROUP_TYPES = [
-        ("men", "Men's Fellowship"),
-        ("women", "Women's Fellowship"),
-        ("youth", "Youth Group"),
-        ("sunday_school", "Sunday School"),
-        ("choir", "Choir"),
-        ("prayer", "Prayer Group"),
-        ("other", "Other"),
-    ]
-    name = models.CharField(max_length=100)
-    group_type = models.CharField(max_length=100, choices=GROUP_TYPES)
-    description = models.TextField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.get_group_type_display()})"
 
 
 class Project(models.Model):
@@ -55,10 +34,10 @@ class Project(models.Model):
         ChurchGroup, on_delete=models.CASCADE, related_name="projects"
     )
     project_leader = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="led_projects"
+        CustomUser, on_delete=models.CASCADE, related_name="led_projects"
     )
     team_members = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, related_name="assigned_projects", blank=True
+        CustomUser, related_name="assigned_projects", blank=True
     )
 
     # Timeline
@@ -91,6 +70,29 @@ class Project(models.Model):
     def __str__(self):
         return f"{self.title} - {self.get_status_display()}"
 
+    def can_edit_project(self, user):
+        # Staff can edit any project
+        if user.is_staff:
+            return True
+
+        # Project leader can edit
+        if self.project_leader == user:
+            return True
+
+        # Group leaders of the responsible group can edit
+        if hasattr(user, "church_role"):
+            return self.responsible_group in user.church_role.assigned_groups.all()
+
+        return False
+
+    def update_actual_spent(self):
+        """Calculate and update the total actual spent amount for the project."""
+        total_spent = (
+            self.tasks.aggregate(total_spent=models.Sum("cost"))["total_spent"] or 0.00
+        )
+        self.actual_spent = total_spent
+        self.save()
+
 
 class Task(models.Model):
     """Task within a Project"""
@@ -115,14 +117,14 @@ class Task(models.Model):
 
     # Assignment
     assigned_to = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        CustomUser,
         on_delete=models.SET_NULL,
         related_name="assigned_tasks",
         null=True,
         blank=True,
     )
     assigned_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        CustomUser,
         on_delete=models.SET_NULL,
         related_name="created_tasks",
         null=True,
@@ -138,7 +140,9 @@ class Task(models.Model):
         max_length=20, choices=PRIORITY_CHOICES, default="medium"
     )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
-
+    cost = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00, help_text="Cost for this task"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

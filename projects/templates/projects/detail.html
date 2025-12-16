@@ -1,0 +1,633 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ project.title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <!-- Project Header -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-{% if project.status == 'completed' %}success{% elif project.status == 'ongoing' %}primary{% elif project.status == 'planning' %}info{% else %}secondary{% endif %} text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">
+                            <i class="fas fa-project-diagram"></i> {{ project.title }}
+                        </h3>
+                        <p class="mb-0 mt-1">
+                            <i class="fas fa-users"></i> {{ project.responsible_group.name }}
+                        </p>
+                    </div>
+                    <span class="badge bg-light text-dark fs-6">
+                        {{ project.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-body">
+                <!-- Project Description -->
+                <div class="mb-4">
+                    <h5><i class="fas fa-info-circle"></i> Description</h5>
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            {{ project.description|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Project Details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h5><i class="fas fa-calendar"></i> Timeline</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Start Date:</dt>
+                            <dd class="col-sm-8">
+                                {% if project.start_date %}
+                                {{ project.start_date|date:"F d, Y" }}
+                                {% else %}
+                                <span class="text-warning">Not set</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Target End:</dt>
+                            <dd class="col-sm-8">
+                                {% if project.target_end_date %}
+                                {{ project.target_end_date|date:"F d, Y" }}
+                                {% if project.target_end_date < today %}
+                                <span class="badge bg-danger ms-1">Overdue</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-warning">Not set</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Actual End:</dt>
+                            <dd class="col-sm-8">
+                                {% if project.actual_end_date %}
+                                {{ project.actual_end_date|date:"F d, Y" }}
+                                {% else %}
+                                <span class="text-muted">Not completed</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Duration:</dt>
+                            <dd class="col-sm-8">
+                                {% if project.start_date and project.target_end_date %}
+                                {% with duration=project.target_end_date|timeuntil:project.start_date %}
+                                {{ duration }}
+                                {% endwith %}
+                                {% else %}
+                                <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </dd>
+                        </dl>
+                    </div>
+                   <div class="col-md-6">
+                        <h5><i class="fas fa-money-bill"></i> Budget & Progress</h5>
+                        <dl class="row">
+                            <!-- Budget -->
+                            <dt class="col-sm-4">Budget:</dt>
+                            <dd class="col-sm-8">
+                                {% if project.budget_amount %}
+                                    KSh {{ project.budget_amount|floatformat:2 }}
+                                {% else %}
+                                    <span class="text-muted">Not specified</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <!-- Actual Spent -->
+                            <dt class="col-sm-4">Actual Spent:</dt>
+                            <dd class="col-sm-8">
+                                {% if project.actual_spent %}
+                                    KSh {{ project.actual_spent|floatformat:2 }}
+                                    {% if project.budget_amount %}
+                                        ({% widthratio project.actual_spent project.budget_amount 100 %}% of budget)
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Not recorded</span>
+                                {% endif %}
+                                <p>{{project.remaining}} </p>
+                            </dd>
+                            
+                            
+                    <!-- Budget Remaining -->
+                    <dt class="col-sm-4">Budget Left:</dt>
+                    <dd class="col-sm-8">
+                        {% if budget_remaining is not None %}
+                            KSh {{ budget_remaining|floatformat:2 }}
+                            {% if budget_remaining < 0 %}
+                                <span class="badge bg-danger">Over budget</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    </dd>
+
+
+                            
+                            <!-- Progress -->
+                            <dt class="col-sm-4">Progress:</dt>
+                            <dd class="col-sm-8">
+                                {{ project.progress_percentage }}%
+                                <div class="progress mt-1" style="height: 8px;">
+                                    <div class="progress-bar bg-{% if project.progress_percentage < 50 %}warning{% elif project.progress_percentage < 80 %}info{% else %}success{% endif %}" 
+                                        style="width: {{ project.progress_percentage }}%">
+                                    </div>
+                                </div>
+                            </dd>
+                        </dl>
+                    </div>
+
+                </div>
+                
+                <!-- Milestones -->
+                {% if project.milestones %}
+                <div class="mb-4">
+                    <h5><i class="fas fa-flag"></i> Milestones</h5>
+                    <div class="card">
+                        <div class="card-body">
+                            {{ project.milestones|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Team Members -->
+                <div class="mb-4">
+                    <h5><i class="fas fa-users"></i> Project Team</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-crown"></i> Project Leader
+                                    </h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="mb-3">
+                                        <i class="fas fa-user-circle fa-3x text-primary"></i>
+                                    </div>
+                                    <h6>{{ project.project_leader.get_full_name|default:project.project_leader.username }}</h6>
+                                    <p class="text-muted mb-0">
+                                        {{ project.project_leader.email }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card h-100">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-users"></i> Team Members
+                                        <span class="badge bg-light text-dark float-end">{{ team_members|length }}</span>
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    {% if team_members %}
+                                    <div class="list-group list-group-flush">
+                                        {% for member in team_members %}
+                                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="fas fa-user text-secondary me-2"></i>
+                                                {{ member.get_full_name|default:member.username }}
+                                            </div>
+                                            <small class="text-muted">{{ member.email }}</small>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <p class="text-muted text-center mb-0">No team members assigned</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tasks Section -->
+        <div class="card shadow">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-tasks"></i> Project Tasks
+                    <span class="badge bg-light text-dark ms-2">{{ tasks|length }}</span>
+                </h5>
+                {% if can_add_task %}
+                <a href="{% url 'projects:task_create' project_id=project.pk %}" class="btn btn-light btn-sm">
+                    <i class="fas fa-plus"></i> Add Task
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <!-- Task Statistics -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body text-center py-2">
+                                <h6 class="mb-0">{{ task_stats.total|default:0 }}</h6>
+                                <small>Total Tasks</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body text-center py-2">
+                                <h6 class="mb-0">{{ task_stats.completed|default:0 }}</h6>
+                                <small>Completed</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-info text-white">
+                            <div class="card-body text-center py-2">
+                                <h6 class="mb-0">{{ task_stats.in_progress|default:0 }}</h6>
+                                <small>In Progress</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body text-center py-2">
+                                <h6 class="mb-0">{{ task_stats.blocked|default:0 }}</h6>
+                                <small>Blocked</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tasks List -->
+                {% if tasks %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Task</th>
+                                <th>Assigned To</th>
+                                <th>Due Date</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th>Cost</th>
+                                <th>Actions</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for task in tasks %}
+                            <tr class="{% if task.status == 'completed' %}table-success{% elif task.status == 'blocked' %}table-danger{% elif task.status == 'in_progress' %}table-info{% endif %}">
+                                <td>
+                                    <strong>{{ task.title }}</strong>
+                                    {% if task.description %}
+                                    <br>
+                                    <small class="text-muted">{{ task.description|truncatechars:50 }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.assigned_to %}
+                                    {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                                    {% else %}
+                                    <span class="text-warning">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if task.due_date %}
+                                    {{ task.due_date|date:"M d, Y" }}
+                                    {% if task.due_date < today and task.status != 'completed' %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">Not set</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if task.priority == 'high' %}danger{% elif task.priority == 'medium' %}warning{% elif task.priority == 'low' %}info{% else %}dark{% endif %}">
+                                        {{ task.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'in_progress' %}primary{% elif task.status == 'blocked' %}danger{% else %}secondary{% endif %}">
+                                        {{ task.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">
+                                        {{ task.cost }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#taskModal{{ task.id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        {% if user.is_staff or user == task.assigned_to or user == project.project_leader %}
+                                        <a href="{% url 'projects:task_update' task.pk %}" class="btn btn-outline-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'projects:task_delete' task.pk %}" class="btn btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Task Detail Modal -->
+                                    <div class="modal fade" id="taskModal{{ task.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">{{ task.title }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <dl class="row">
+                                                        <dt class="col-sm-4">Description:</dt>
+                                                        <dd class="col-sm-8">{{ task.description|linebreaks }}</dd>
+                                                        
+                                                        <dt class="col-sm-4">Assigned To:</dt>
+                                                        <dd class="col-sm-8">
+                                                            {% if task.assigned_to %}
+                                                            {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                                                            {% else %}
+                                                            <span class="text-warning">Unassigned</span>
+                                                            {% endif %}
+                                                        </dd>
+                                                        
+                                                        <dt class="col-sm-4">Assigned By:</dt>
+                                                        <dd class="col-sm-8">
+                                                            {% if task.assigned_by %}
+                                                            {{ task.assigned_by.get_full_name|default:task.assigned_by.username }}
+                                                            {% else %}
+                                                            <span class="text-muted">Unknown</span>
+                                                            {% endif %}
+                                                        </dd>
+                                                        
+                                                        <dt class="col-sm-4">Due Date:</dt>
+                                                        <dd class="col-sm-8">
+                                                            {% if task.due_date %}
+                                                            {{ task.due_date|date:"F d, Y" }}
+                                                            {% else %}
+                                                            <span class="text-muted">Not set</span>
+                                                            {% endif %}
+                                                        </dd>
+                                                        
+                                                        <dt class="col-sm-4">Completed:</dt>
+                                                        <dd class="col-sm-8">
+                                                            {% if task.completed_at %}
+                                                            {{ task.completed_at|date:"F d, Y" }}
+                                                            {% else %}
+                                                            <span class="text-muted">Not completed</span>
+                                                            {% endif %}
+                                                        </dd>
+                                                        
+                                                        <dt class="col-sm-4">Priority:</dt>
+                                                        <dd class="col-sm-8">
+                                                            <span class="badge bg-{% if task.priority == 'high' %}danger{% elif task.priority == 'medium' %}warning{% elif task.priority == 'low' %}info{% else %}dark{% endif %}">
+                                                                {{ task.get_priority_display }}
+                                                            </span>
+                                                        </dd>
+                                                        
+                                                        <dt class="col-sm-4">Status:</dt>
+                                                        <dd class="col-sm-8">
+                                                            <span class="badge bg-{% if task.status == 'completed' %}success{% elif task.status == 'in_progress' %}primary{% elif task.status == 'blocked' %}danger{% else %}secondary{% endif %}">
+                                                                {{ task.get_status_display }}
+                                                            </span>
+                                                        </dd>
+                                                        
+                                                        <dt class="col-sm-4">Created:</dt>
+                                                        <dd class="col-sm-8">{{ task.created_at|date:"M d, Y" }}</dd>
+                                                        
+                                                        <dt class="col-sm-4">Updated:</dt>
+                                                        <dd class="col-sm-8">{{ task.updated_at|date:"M d, Y" }}</dd>
+                                                    </dl>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                    {% if user.is_staff or user == task.assigned_to or user == project.project_leader %}
+                                                    <a href="{% url 'projects:task_update' task.pk %}" class="btn btn-primary">
+                                                        <i class="fas fa-edit"></i> Edit Task
+                                                    </a>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No tasks have been created for this project yet.
+                    {% if can_add_task %}
+                    <a href="{% url 'projects:task_create' project_id=project.pk %}" class="alert-link">Add the first task</a>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <!-- Task Progress -->
+                {% if task_stats.total > 0 %}
+                <div class="mt-4">
+                    <h6>Task Completion Progress</h6>
+                    <div class="progress" style="height: 15px;">
+                        <div class="progress-bar bg-success" style="width: {% widthratio task_stats.completed task_stats.total 100 %}%">
+                            {{ task_stats.completed }} completed
+                        </div>
+                        <div class="progress-bar bg-info" style="width: {% widthratio task_stats.in_progress task_stats.total 100 %}%">
+                            {{ task_stats.in_progress }} in progress
+                        </div>
+                        <div class="progress-bar bg-secondary" style="width: {% widthratio task_stats.pending task_stats.total 100 %}%">
+                            {{ task_stats.pending }} pending
+                        </div>
+                        <div class="progress-bar bg-danger" style="width: {% widthratio task_stats.blocked task_stats.total 100 %}%">
+                            {{ task_stats.blocked }} blocked
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Quick Actions -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt"></i> Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'projects:list' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Projects
+                    </a>
+                    
+                    {% if can_edit %}
+                    <a href="{% url 'projects:update' project.pk %}" class="btn btn-outline-warning">
+                        <i class="fas fa-edit"></i> Edit Project
+                    </a>
+                    {% endif %}
+                    
+                    {% if can_add_task %}
+                    <a href="{% url 'projects:task_create' project_id=project.pk %}" class="btn btn-outline-success">
+                        <i class="fas fa-plus"></i> Add Task
+                    </a>
+                    {% endif %}
+                    
+                    {% if can_delete %}
+                    <a href="{% url 'projects:delete' project.pk %}" class="btn btn-outline-danger">
+                        <i class="fas fa-trash"></i> Delete Project
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{% url 'projects:calendar' %}" class="btn btn-outline-info">
+                        <i class="fas fa-calendar"></i> View Calendar
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Project Statistics -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> Project Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <div class="display-4">{{ project.progress_percentage }}%</div>
+                    <p class="text-muted">Overall Progress</p>
+                </div>
+                
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded">
+                            <div class="h5 mb-0">{{ task_stats.total|default:0 }}</div>
+                            <small class="text-muted">Tasks</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-light rounded">
+                            <div class="h5 mb-0">{{ team_members|length }}</div>
+                            <small class="text-muted">Team Members</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="progress mb-2" style="height: 8px;">
+                    <div class="progress-bar bg-success" style="width: {% widthratio task_stats.completed task_stats.total 100 %}%"></div>
+                </div>
+                <small class="text-muted d-block">
+                    <i class="fas fa-check-circle text-success"></i> 
+                    {{ task_stats.completed|default:0 }} of {{ task_stats.total|default:0 }} tasks completed
+                </small>
+                
+                {% if project.budget_amount %}
+                <hr>
+                <small class="text-muted d-block mb-1">
+                    <i class="fas fa-money-bill"></i> Budget Status
+                </small>
+                <div class="progress mb-2" style="height: 8px;">
+                    <div class="progress-bar bg-{% if budget_remaining and budget_remaining < 0 %}danger{% else %}warning{% endif %}" 
+                         style="width: {% if project.budget_amount and project.actual_spent %}{% widthratio project.actual_spent project.budget_amount 100 %}%{% else %}0%{% endif %}">
+                    </div>
+                </div>
+                <small class="text-muted d-block">
+                    KSh {{ project.actual_spent|default:0|floatformat:2 }} of KSh {{ project.budget_amount|floatformat:2 }} spent
+                </small>
+    
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Project Metadata -->
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Project Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="mb-0">
+                    <dt>Type:</dt>
+                    <dd>{{ project.get_project_type_display }}</dd>
+                    
+                    <dt>Group:</dt>
+                    <dd>{{ project.responsible_group.name }}</dd>
+                    
+                    <dt>Leader:</dt>
+                    <dd>{{ project.project_leader.get_full_name|default:project.project_leader.username }}</dd>
+                    
+                    <dt>Created:</dt>
+                    <dd>{{ project.created_at|date:"M d, Y" }}</dd>
+                    
+                    <dt>Updated:</dt>
+                    <dd>{{ project.updated_at|date:"M d, Y" }}</dd>
+                    
+                    {% if project.actual_end_date %}
+                    <dt>Completed:</dt>
+                    <dd>{{ project.actual_end_date|date:"M d, Y" }}</dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-update task status when checkbox clicked
+    const taskCheckboxes = document.querySelectorAll('.task-status-checkbox');
+    taskCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const taskId = this.dataset.taskId;
+            const newStatus = this.checked ? 'completed' : 'pending';
+            
+            fetch(`/api/tasks/${taskId}/status/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error updating task status');
+                    this.checked = !this.checked;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                this.checked = !this.checked;
+            });
+        });
+    });
+    
+    // Helper function to get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+{% endblock %}
