@@ -228,13 +228,11 @@
                 <div class="card-body">
                     <div class="d-grid gap-2">
                         {% if not is_enrolled and user.is_authenticated %}
-                        <form method="post" action="{% url 'curriculum:enroll' curriculum.pk %}" class="mb-2">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-success w-100">
+                            <button id="openEnrollmentModal" class="btn btn-success w-100 mb-2">
                                 <i class="fas fa-user-plus"></i> Enroll in Curriculum
                             </button>
-                        </form>
                         {% endif %}
+
                         
                         {% if perms.curriculum.add_lesson %}
                         <a href="{% url 'curriculum:lesson_create' curriculum.pk %}" class="btn btn-primary mb-2">
@@ -247,12 +245,16 @@
                         </a>
                         
                         <div class="btn-group w-100">
-                            <a href="{% url 'curriculum:update' curriculum.pk %}" class="btn btn-outline-warning">
+                            {% if perms.curriculum.change_curriculum %}
+                            <a href="{% url 'curriculum:update' curriculum.pk %}" class="btn btn-warning">
                                 <i class="fas fa-edit"></i> Edit
                             </a>
-                            <a href="{% url 'curriculum:delete' curriculum.pk %}" class="btn btn-outline-danger">
-                                <i class="fas fa-trash"></i> Delete
+                            {% endif %}
+                            {% if perms.curriculum.add_lesson %}
+                            <a href="{% url 'curriculum:lesson_create' curriculum.pk %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Add Lesson
                             </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -589,22 +591,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Auto-expand first lesson
     const firstLesson = document.querySelector('.collapse');
-    if (firstLesson) {
-        firstLesson.classList.add('show');
-    }
-    
+    if (firstLesson) firstLesson.classList.add('show');
+
     // Enrollment modal
-    const enrollButtons = document.querySelectorAll('button[type="submit"]');
-    enrollButtons.forEach(button => {
-        if (button.textContent.includes('Enroll')) {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const enrollmentModal = new bootstrap.Modal(document.querySelector('#enrollmentModal'));
-                enrollmentModal.show();
-            });
-        }
-    });
-    
+    const enrollButton = document.querySelector('#openEnrollmentModal');
+    if (enrollButton) {
+        enrollButton.addEventListener('click', function() {
+            const enrollmentModal = new bootstrap.Modal(document.querySelector('#enrollmentModal'));
+            enrollmentModal.show();
+        });
+    }
+
     // Lesson filtering
     const filterButtons = document.createElement('div');
     filterButtons.className = 'd-flex flex-wrap gap-2 mb-3';
@@ -620,50 +617,35 @@ document.addEventListener('DOMContentLoaded', function() {
         </button>
     `;
     
-    const lessonsCard = document.querySelector('.card-body:has(#lessonsAccordion)');
-    if (lessonsCard) {
-        lessonsCard.insertBefore(filterButtons, lessonsCard.firstChild);
-    }
-    
+    const lessonsCard = document.querySelector('#lessonsAccordion')?.closest('.card-body');
+    if (lessonsCard) lessonsCard.insertBefore(filterButtons, lessonsCard.firstChild);
+
     // Filter functionality
     document.querySelector('#showTaught')?.addEventListener('click', function() {
         document.querySelectorAll('.accordion .card').forEach(card => {
-            if (card.classList.contains('border-success')) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
-            }
+            card.style.display = card.classList.contains('border-success') ? '' : 'none';
         });
     });
-    
+
     document.querySelector('#showUpcoming')?.addEventListener('click', function() {
         document.querySelectorAll('.accordion .card').forEach(card => {
-            if (card.classList.contains('border-warning')) {
-                card.style.display = '';
-            } else {
-                card.style.display = 'none';
-            }
+            card.style.display = card.classList.contains('border-warning') ? '' : 'none';
         });
     });
-    
+
     document.querySelector('#showAll')?.addEventListener('click', function() {
-        document.querySelectorAll('.accordion .card').forEach(card => {
-            card.style.display = '';
-        });
+        document.querySelectorAll('.accordion .card').forEach(card => card.style.display = '');
     });
-    
+
     // Print curriculum
     const printButton = document.createElement('button');
     printButton.className = 'btn btn-outline-info btn-sm ms-2';
     printButton.innerHTML = '<i class="fas fa-print"></i> Print';
-    printButton.addEventListener('click', function() {
-        window.print();
-    });
-    
-    const headerActions = document.querySelector('.btn-group');
-    if (headerActions) {
-        headerActions.appendChild(printButton);
-    }
+    printButton.addEventListener('click', () => window.print());
+
+    const headerActions = document.querySelector('.card-header .btn-group');
+    if (headerActions) headerActions.appendChild(printButton);
 });
+
 </script>
 {% endblock %}

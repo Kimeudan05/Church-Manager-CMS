@@ -264,7 +264,7 @@ class LessonCreateView(CanManageCurriculumMixin, CreateView):
     def get_success_url(self):
         return reverse(
             "curriculum:lesson_detail",
-            kwargs={"pk": self.object.pk},
+            kwargs={"curriculum_id": self.curriculum.pk, "pk": self.object.pk},
         )
 
 
@@ -371,52 +371,151 @@ class TakeAttendanceView(CanManageCurriculumMixin, CreateView):
 
 
 class BulkAttendanceView(CanManageCurriculumMixin, FormView):
-    form_class = BulkAttendanceForm
+    """Mark bulk attendance to the lesson"""
+
     template_name = "curriculum/bulk_attendance.html"
+    form_class = BulkAttendanceForm
 
     def get_form_kwargs(self):
+        """
+        Inject the lesson into the form so it can dynamically
+        generate member_<user_id> checkbox fields.
+        """
         kwargs = super().get_form_kwargs()
-        lesson_id = self.kwargs.get("lesson_id")
-        lesson = get_object_or_404(Lesson, pk=lesson_id)
+        lesson = get_object_or_404(Lesson, pk=self.kwargs.get("lesson_id"))
         kwargs["lesson"] = lesson
         return kwargs
 
-    def form_valid(self, form):
-        lesson_id = self.kwargs.get("lesson_id")
-        lesson = get_object_or_404(Lesson, pk=lesson_id)
+    def get_context_data(self, **kwargs):
+        """
+        Provide template context needed by the bulk attendance UI.
+        """
+        context = super().get_context_data(**kwargs)
+        lesson = get_object_or_404(Lesson, pk=self.kwargs.get("lesson_id"))
 
-        # Process attendance for each member
         group = lesson.curriculum.target_group
+
+        context.update(
+            {
+                "lesson": lesson,
+                "members": (
+                    [m.member for m in group.group_members.select_related("member")]
+                    if group
+                    else []
+                ),
+                "current_date": timezone.now().date(),
+            }
+        )
+
+        return context
+
+    def form_valid(self, form):
+        """
+        Save bulk attendance records for the lesson.
+        """
+        lesson = get_object_or_404(Lesson, pk=self.kwargs.get("lesson_id"))
+        group = lesson.curriculum.target_group
+
+        if not group:
+            messages.error(
+                self.request,
+                "This curriculum has no target group. Attendance cannot be recorded.",
+            )
+            return redirect(
+                "curriculum:lesson_detail",
+                curriculum_id=lesson.curriculum.pk,
+                pk=lesson.pk,
+            )
+
+        notes = form.data.get("attendance_notes", "")
         members_attended = 0
 
-        for membership in group.group_members.all():
+        for membership in group.group_members.select_related("member"):
             user = membership.member
-            attended = form.cleaned_data.get(f"member_{user.id}", False)
+            field_name = f"member_{user.id}"
+
+            attended = form.cleaned_data.get(field_name, False)
 
             LessonAttendance.objects.update_or_create(
                 lesson=lesson,
-                member=user,  # ✅ CustomUser instance
-                defaults={"attended": attended, "recorded_by": self.request.user},
+                member=user,
+                defaults={
+                    "attended": attended,
+                    "recorded_by": self.request.user,
+                    "notes": notes,
+                },
             )
 
-            if attended:  # ✅ increment the count
+            if attended:
                 members_attended += 1
 
-        # Update lesson attendance count
+        # Update cached attendance count
         lesson.attendance_count = members_attended
-        lesson.save()
+        lesson.save(update_fields=["attendance_count"])
 
         messages.success(
-            self.request, f"Attendance recorded for {members_attended} members!"
+            self.request,
+            f"Attendance recorded successfully. "
+            f"{members_attended} of {group.group_members.count()} members present.",
         )
-        return redirect("curriculum:lesson_detail", pk=lesson.pk)
+
+        return redirect(
+            "curriculum:lesson_detail",
+            curriculum_id=lesson.curriculum.pk,
+            pk=lesson.pk,
+        )
+
+
+class AttendanceUpdateView(CanManageCurriculumMixin, UpdateView):
+    """ "Updating the attendance record for a lesson"""
+
+    model = LessonAttendance
+    form_class = AttendanceForm
+    template_name = "curriculum/take_attendance.html"
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["lesson"] = self.object.lesson
+        return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        lesson_id = self.kwargs.get("lesson_id")
-        lesson = get_object_or_404(Lesson, pk=lesson_id)
-        context["lesson"] = lesson  # ✅ make sure lesson is available
+        context["lesson"] = self.object.lesson
         return context
+
+    def get_success_url(self):
+        lesson = self.object.lesson
+        return reverse(
+            "curriculum:lesson_detail",
+            kwargs={
+                "curriculum_id": lesson.curriculum.pk,
+                "pk": lesson.pk,
+            },
+        )
+
+
+class AttendanceDeleteView(CanManageCurriculumMixin, DeleteView):
+    """Deleting the attendance record for a lesson"""
+
+    model = LessonAttendance
+    template_name = "curriculum/attendance_confirm_delete.html"
+    context_object_name = "attendance"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["lesson"] = self.object.lesson
+        return context
+
+    def get_success_url(self):
+        lesson = self.object.lesson
+        messages.success(self.request, "Attendance record deleted successfully.")
+        return reverse(
+            "curriculum:lesson_detail",
+            kwargs={
+                "curriculum_id": lesson.curriculum.pk,
+                "pk": lesson.pk,
+            },
+        )
 
 
 # Progress & Enrollment Views

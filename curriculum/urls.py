@@ -48,6 +48,16 @@ urlpatterns = [
         views.BulkAttendanceView.as_view(),
         name="bulk_attendance",
     ),
+    path(
+        "curriculum/<int:curriculum_id>/lessons/<int:lesson_id>/attendance/<int:pk>/edit/",
+        views.AttendanceUpdateView.as_view(),
+        name="attendance_edit",
+    ),
+    path(
+        "curriculum/<int:curriculum_id>/lessons/<int:lesson_id>/attendance/<int:pk>/delete/",
+        views.AttendanceDeleteView.as_view(),
+        name="attendance_delete",
+    ),
     # Progress & Enrollment
     path(
         "<int:curriculum_id>/enroll/",

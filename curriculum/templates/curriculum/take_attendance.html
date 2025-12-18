@@ -148,7 +148,7 @@
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">
                         <i class="fas fa-list"></i> Current Attendance Records
-                        <span class="badge badge-primary ml-2">{{ lesson.attendances.count }}</span>
+                        <span class="badge badge-primary bg-primary ml-2 ">{{ lesson.attendances.count }}</span>
                     </h6>
                 </div>
                 <div class="card-body">
@@ -204,12 +204,12 @@
                                     </td>
                                     <td>
                                         {% if perms.curriculum.change_lessonattendance %}
-                                        <a href="#" class="btn btn-sm btn-outline-warning" title="Edit">
+                                        <a href="{% url 'curriculum:attendance_edit' lesson.curriculum.pk lesson.pk record.pk %}" class="btn btn-sm btn-outline-warning" title="Edit">
                                             <i class="fas fa-edit"></i>
                                         </a>
                                         {% endif %}
                                         {% if perms.curriculum.delete_lessonattendance %}
-                                        <a href="#" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <a href="{% url 'curriculum:attendance_delete' lesson.curriculum.pk lesson.pk record.pk %}" class="btn btn-sm btn-outline-danger" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </a>
                                         {% endif %}
