@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Teaching Curriculums - Church CMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Teaching Curriculums</h1>
+            <p class="text-muted mb-0">Manage Sunday School, Bible Study, and other teaching materials</p>
+        </div>
+        <div class="btn-group">
+            {% if perms.curriculum.add_curriculum %}
+            <a href="{% url 'curriculum:create' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> New Curriculum
+            </a>
+            {% endif %}
+            <a href="{% url 'curriculum:dashboard' %}" class="btn btn-info">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Curriculums
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ curriculums.count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-play-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                In Draft
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ draft_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-edit fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Completed
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ completed_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-light py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter"></i> Filter Curriculums
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Curriculum Type</label>
+                    <select name="type" id="type" class="form-select">
+                        <option value="">All Types</option>
+                        {% for type_code, type_name in curriculum_types %}
+                        <option value="{{ type_code }}" {% if request.GET.type == type_code %}selected{% endif %}>
+                            {{ type_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Status</option>
+                        {% for status_code, status_name in status_choices %}
+                        <option value="{{ status_code }}" {% if request.GET.status == status_code %}selected{% endif %}>
+                            {{ status_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="group" class="form-label">Target Group</label>
+                    <select name="group" id="group" class="form-select">
+                        <option value="">All Groups</option>
+                        {% for group in groups %}
+                        <option value="{{ group.id }}" {% if request.GET.group == group.id|stringformat:"s" %}selected{% endif %}>
+                            {{ group.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <div class="input-group">
+                        <input type="text" name="search" id="search" class="form-control" 
+                               placeholder="Search..." value="{{ request.GET.search }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <a href="{% url 'curriculum:list' %}" class="btn btn-secondary">
+                            <i class="fas fa-redo"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Curriculum List -->
+    <div class="card shadow">
+        <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i> All Curriculums
+            </h6>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown">
+                    <i class="fas fa-cog"></i> Options
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" id="exportBtn"><i class="fas fa-download"></i> Export List</a></li>
+                    <li><a class="dropdown-item" href="#" id="printBtn"><i class="fas fa-print"></i> Print View</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'curriculum:statistics' %}" target="_blank">
+                        <i class="fas fa-chart-bar"></i> View Statistics
+                    </a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            {% if curriculums %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="curriculumTable">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Target Group</th>
+                            <th>Duration</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for curriculum in curriculums %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-book fa-2x text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <strong>{{ curriculum.title }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ curriculum.description|truncatewords:10 }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge bg-info">{{ curriculum.get_curriculum_type_display }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-users me-2 text-muted"></i>
+                                    {{ curriculum.target_group.name }}
+                                </div>
+                            </td>
+                            <td>
+                                <small>
+                                    {{ curriculum.start_date|date:"M d" }} - {{ curriculum.end_date|date:"M d, Y" }}
+                                    <br>
+                                    <span class="text-muted">{{ curriculum.duration_weeks }} weeks</span>
+                                </small>
+                            </td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar {% if curriculum.progress_percentage == 100 %}bg-success{% else %}bg-primary{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ curriculum.progress_percentage }}%;"
+                                         aria-valuenow="{{ curriculum.progress_percentage }}" 
+                                         aria-valuemin="0" 
+                                         aria-valuemax="100">
+                                        {{ curriculum.progress_percentage }}%
+                                    </div>
+                                </div>
+                                <small>{{ curriculum.lessons_taught }} of {{ curriculum.total_lessons }} lessons</small>
+                            </td>
+                            <td>
+                                {% if curriculum.status == 'active' %}
+                                <span class="badge bg-success">{{ curriculum.get_status_display }}</span>
+                                {% elif curriculum.status == 'completed' %}
+                                <span class="badge bg-secondary">{{ curriculum.get_status_display }}</span>
+                                {% elif curriculum.status == 'draft' %}
+                                <span class="badge bg-warning">{{ curriculum.get_status_display }}</span>
+                                {% else %}
+                                <span class="badge bg-info">{{ curriculum.get_status_display }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'curriculum:detail' curriculum.pk %}" 
+                                       class="btn btn-info" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if perms.curriculum.change_curriculum %}
+                                    <a href="{% url 'curriculum:update' curriculum.pk %}" 
+                                       class="btn btn-warning" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if perms.curriculum.delete_curriculum %}
+                                    <a href="{% url 'curriculum:delete' curriculum.pk %}" 
+                                       class="btn btn-danger" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            {{ num }}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-book fa-4x text-muted mb-3"></i>
+                <h5>No curriculums found</h5>
+                <p class="text-muted">Get started by creating your first curriculum</p>
+                {% if perms.curriculum.add_curriculum %}
+                <a href="{% url 'curriculum:create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Create Curriculum
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-download"></i> Export Curriculums
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="exportForm">
+                    <div class="mb-3">
+                        <label for="exportFormat" class="form-label">Export Format</label>
+                        <select class="form-select" id="exportFormat">
+                            <option value="csv">CSV (Spreadsheet)</option>
+                            <option value="pdf">PDF (Printable)</option>
+                            <option value="excel">Excel (XLSX)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Include Fields</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeTitle" checked>
+                            <label class="form-check-label" for="includeTitle">Title & Description</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeDetails" checked>
+                            <label class="form-check-label" for="includeDetails">Dates & Duration</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeProgress" checked>
+                            <label class="form-check-label" for="includeProgress">Progress & Status</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeLessons" checked>
+                            <label class="form-check-label" for="includeLessons">Lesson Information</label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="exportScope" class="form-label">Export Scope</label>
+                        <select class="form-select" id="exportScope">
+                            <option value="current">Current filtered list</option>
+                            <option value="all">All curriculums</option>
+                            <option value="active">Active curriculums only</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="exportConfirmBtn">
+                    <i class="fas fa-download"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.progress {
+    border-radius: 10px;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    font-size: 0.75rem;
+    line-height: 20px;
+}
+
+.table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-weight: 500;
+    padding: 0.4em 0.8em;
+}
+
+.page-link {
+    border-radius: 0.375rem;
+    margin: 0 2px;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    .card {
+        border: none;
+        box-shadow: none;
+    }
+    
+    .table {
+        border: 1px solid #dee2e6;
+    }
+    
+    .btn-group {
+        display: none;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Export functionality
+    const exportBtn = document.querySelector('#exportBtn');
+    const exportModal = new bootstrap.Modal(document.querySelector('#exportModal'));
+    
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            exportModal.show();
+        });
+    }
+    
+    // Print functionality
+    const printBtn = document.querySelector('#printBtn');
+    if (printBtn) {
+        printBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Create print-friendly version
+            const originalContent = document.querySelector('#curriculumTable').innerHTML;
+            const printWindow = window.open('', '_blank');
+            
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Curriculums - Church CMS</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; }
+                        h1 { color: #2c3e50; }
+                        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #f8f9fa; }
+                        .progress-bar { background-color: #007bff; height: 20px; border-radius: 4px; }
+                        .badge { padding: 3px 8px; border-radius: 4px; font-size: 12px; }
+                        .bg-success { background-color: #28a745 !important; }
+                        .bg-warning { background-color: #ffc107 !important; }
+                        .bg-info { background-color: #17a2b8 !important; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Teaching Curriculums</h1>
+                    <p>Generated on: ${new Date().toLocaleDateString()}</p>
+                    ${originalContent}
+                    <script>
+                        window.onload = function() { window.print(); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+        });
+    }
+    
+    // Export confirmation
+    const exportConfirmBtn = document.querySelector('#exportConfirmBtn');
+    if (exportConfirmBtn) {
+        exportConfirmBtn.addEventListener('click', function() {
+            const format = document.querySelector('#exportFormat').value;
+            alert(`Exporting curriculums as ${format.toUpperCase()}...\n\nThis feature would generate a file download in a real application.`);
+            exportModal.hide();
+        });
+    }
+    
+    // Quick filter buttons
+    const filterButtons = document.createElement('div');
+    filterButtons.className = 'd-flex flex-wrap gap-2 mt-3';
+    filterButtons.innerHTML = `
+        <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.location.href='{% url 'curriculum:list' %}?status=active'">
+            <i class="fas fa-play-circle"></i> Active
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-warning" onclick="window.location.href='{% url 'curriculum:list' %}?status=draft'">
+            <i class="fas fa-edit"></i> Drafts
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-success" onclick="window.location.href='{% url 'curriculum:list' %}?status=completed'">
+            <i class="fas fa-check-circle"></i> Completed
+        </button>
+        {% for group in user_groups %}
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="window.location.href='{% url 'curriculum:list' %}?group={{ group.id }}'">
+            <i class="fas fa-users"></i> {{ group.name|truncatechars:15 }}
+        </button>
+        {% endfor %}
+    `;
+    
+    const filterCardBody = document.querySelector('.card-body');
+    if (filterCardBody) {
+        filterCardBody.appendChild(filterButtons);
+    }
+    
+    // Auto-submit form on filter change
+    const filterForm = document.querySelector('form[method="get"]');
+    if (filterForm) {
+        const filterSelects = filterForm.querySelectorAll('select');
+        filterSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                filterForm.submit();
+            });
+        });
+    }
+    
+    // Search debounce
+    let searchTimeout;
+    const searchInput = document.querySelector('#search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                filterForm.submit();
+            }, 500);
+        });
+    }
+});
+</script>
+{% endblock %}

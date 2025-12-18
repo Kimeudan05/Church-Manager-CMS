@@ -1,0 +1,234 @@
+{% extends 'curriculum/base_curriculum.html' %}
+
+{% block title %}Take Attendance - Lesson {{ lesson.lesson_number }}{% endblock %}
+
+{% block curriculum_breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'curriculum:detail' lesson.curriculum.pk %}">{{ lesson.curriculum.title|truncatechars:20 }}</a></li>
+<li class="breadcrumb-item"><a href="{% url 'curriculum:lesson_detail' lesson.curriculum.pk lesson.pk %}">Lesson {{ lesson.lesson_number }}</a></li>
+<li class="breadcrumb-item active">Take Attendance</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-primary">
+                    <h6 class="m-0 font-weight-bold text-white">
+                        <i class="fas fa-user-check"></i> Take Attendance
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-users fa-4x text-primary mb-3"></i>
+                        <h4 class="text-primary">Record Attendance</h4>
+                        <p class="lead">Lesson {{ lesson.lesson_number }}: {{ lesson.title }}</p>
+                        <p class="text-muted">{{ lesson.date_taught|date:"F d, Y" }}</p>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Curriculum:</strong> {{ lesson.curriculum.title }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Target Group:</strong> {{ lesson.curriculum.target_group.name }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <div class="form-group">
+                            <label for="{{ form.member.id_for_label }}">{{ form.member.label }} *</label>
+                            <select name="{{ form.member.name }}" 
+                                    id="{{ form.member.id_for_label }}" 
+                                    class="form-control {% if form.member.errors %}is-invalid{% endif %}" 
+                                    required>
+                                <option value="">Select Member</option>
+                                {% for member in form.fields.member.queryset %}
+                                <option value="{{ member.pk }}" 
+                                        {% if form.member.value == member.pk|stringformat:"i" %}selected{% endif %}>
+                                    {{ member.get_full_name|default:member.username }}
+
+
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if form.member.help_text %}
+                            <small class="form-text text-muted">{{ form.member.help_text }}</small>
+                            {% endif %}
+                            {% if form.member.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.member.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" name="{{ form.attended.name }}" 
+                                       id="{{ form.attended.id_for_label }}" 
+                                       class="custom-control-input {% if form.attended.errors %}is-invalid{% endif %}" 
+                                       {% if form.attended.value %}checked{% endif %}>
+                                <label class="custom-control-label" for="{{ form.attended.id_for_label }}">
+                                    {{ form.attended.label }}
+                                </label>
+                            </div>
+                            {% if form.attended.help_text %}
+                            <small class="form-text text-muted">{{ form.attended.help_text }}</small>
+                            {% endif %}
+                            {% if form.attended.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.attended.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.notes.id_for_label }}">{{ form.notes.label }}</label>
+                            <textarea name="{{ form.notes.name }}" 
+                                      id="{{ form.notes.id_for_label }}" 
+                                      class="form-control {% if form.notes.errors %}is-invalid{% endif %}" 
+                                      rows="3">{{ form.notes.value|default:'' }}</textarea>
+                            {% if form.notes.help_text %}
+                            <small class="form-text text-muted">{{ form.notes.help_text }}</small>
+                            {% endif %}
+                            {% if form.notes.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.notes.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="fas fa-info-circle"></i> Note</h6>
+                            <p class="mb-0">
+                                Each member can only have one attendance record per lesson.
+                                If you need to record attendance for multiple members at once, 
+                                use the <a href="{% url 'curriculum:bulk_attendance' lesson.curriculum.pk lesson.pk %}" class="alert-link">Bulk Attendance</a> option.
+                            </p>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <a href="{% url 'curriculum:lesson_detail' lesson.curriculum.pk lesson.pk %}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Cancel
+                                    </a>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Save Attendance
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Current Attendance Records -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-list"></i> Current Attendance Records
+                        <span class="badge badge-primary ml-2">{{ lesson.attendances.count }}</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if lesson.attendances.all %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Member</th>
+                                    <th>Status</th>
+                                    <th>Recorded By</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in lesson.attendances.all %}
+                                <tr class="{% if record.attended %}table-success{% else %}table-danger{% endif %}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if record.member.profile_picture %}
+                                            <img src="{{ record.member.profile_picture.url }}" 
+                                                 class="rounded-circle mr-2" 
+                                                 width="30" height="30" 
+                                                 alt="{{ record.member.get_full_name }}">
+                                            {% else %}
+                                            <div class="rounded-circle bg-secondary mr-2 d-flex align-items-center justify-content-center" 
+                                                 style="width: 30px; height: 30px;">
+                                                <i class="fas fa-user text-white" style="font-size: 0.8rem;"></i>
+                                            </div>
+                                            {% endif %}
+                                            {{ record.member.get_full_name }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if record.attended %}
+                                        <span class="badge bg-success">Present</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Absent</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.recorded_by %}
+                                        {{ record.recorded_by.get_full_name|default:record.recorded_by.username }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.notes %}
+                                        <small>{{ record.notes|truncatechars:30 }}</small>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if perms.curriculum.change_lessonattendance %}
+                                        <a href="#" class="btn btn-sm btn-outline-warning" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if perms.curriculum.delete_lessonattendance %}
+                                        <a href="#" class="btn btn-sm btn-outline-danger" title="Delete">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                        <h6>No attendance records yet</h6>
+                        <p class="text-muted">Start by adding attendance records above</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

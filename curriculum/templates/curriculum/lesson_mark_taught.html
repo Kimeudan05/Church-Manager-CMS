@@ -1,0 +1,374 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Mark Lesson as Taught - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-check-circle"></i> 
+                    Mark Lesson as Taught
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <!-- Lesson Info -->
+                <div class="card mb-4 border-info">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-book-open"></i> Lesson Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5>Lesson {{ lesson.lesson_number }}: {{ lesson.title }}</h5>
+                                <p class="mb-2">
+                                    <i class="fas fa-book-bible"></i> 
+                                    <strong>Scripture:</strong> {{ lesson.scripture_reference }}
+                                </p>
+                                <p class="mb-0">
+                                    <i class="fas fa-layer-group"></i> 
+                                    <strong>Curriculum:</strong> 
+                                    <a href="{% url 'curriculum:detail' lesson.curriculum.pk %}">
+                                        {{ lesson.curriculum.title }}
+                                    </a>
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="badge bg-primary p-2">
+                                    <i class="fas fa-users"></i> 
+                                    {{ lesson.curriculum.target_group.name }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Teaching Details -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chalkboard-teacher"></i> Teaching Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.date_taught|as_crispy_field }}
+                                    <div class="form-text">
+                                        <i class="fas fa-calendar"></i> 
+                                        When this lesson was actually taught.
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.teacher|as_crispy_field }}
+                                    <div class="form-text">
+                                        <i class="fas fa-user-tie"></i> 
+                                        Who taught this lesson.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.attendance_count|as_crispy_field }}
+                                    <div class="form-text">
+                                        <i class="fas fa-users"></i> 
+                                        Total number of attendees.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> 
+                                <strong>Note:</strong> 
+                                After marking this lesson as taught, you can record detailed attendance 
+                                for individual members on the lesson page.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Impact Assessment -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line"></i> Impact Assessment
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">How well was the lesson received?</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="reception" id="receptionExcellent" autocomplete="off">
+                                    <label class="btn btn-outline-success" for="receptionExcellent">
+                                        <i class="fas fa-grin-stars"></i> Excellent
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="reception" id="receptionGood" autocomplete="off">
+                                    <label class="btn btn-outline-primary" for="receptionGood">
+                                        <i class="fas fa-smile"></i> Good
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="reception" id="receptionAverage" autocomplete="off">
+                                    <label class="btn btn-outline-warning" for="receptionAverage">
+                                        <i class="fas fa-meh"></i> Average
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="reception" id="receptionNeedsWork" autocomplete="off">
+                                    <label class="btn btn-outline-danger" for="receptionNeedsWork">
+                                        <i class="fas fa-frown"></i> Needs Work
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Optional: Rate how well the lesson was received by students
+                                </small>
+                            </div>
+                            
+                            <div class="form-group mt-3">
+                                <label for="notes" class="form-label">Additional Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                          placeholder="Any observations, feedback, or suggestions for future teaching..."></textarea>
+                                <small class="form-text text-muted">
+                                    Optional: Record any important observations or feedback
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Next Steps -->
+                    <div class="card mb-4 border-warning">
+                        <div class="card-header bg-warning">
+                            <h5 class="mb-0">
+                                <i class="fas fa-forward"></i> Next Steps
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-check-circle text-success"></i>
+                                    <strong>Mark lesson as complete</strong> in the curriculum
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-user-check text-primary"></i>
+                                    <strong>Record detailed attendance</strong> for individual members
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-chart-bar text-info"></i>
+                                    <strong>Update curriculum progress</strong> statistics
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-calendar-alt text-warning"></i>
+                                    <strong>Schedule next lesson</strong> if applicable
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Errors -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Please fix the errors below:</h5>
+                        <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'curriculum:lesson_detail' lesson.curriculum.pk lesson.pk %}" 
+                           class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-check-circle"></i> Mark as Taught
+                            </button>
+                            
+                            <a href="{% url 'curriculum:bulk_attendance' lesson.curriculum.pk lesson.pk %}" 
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-users"></i> Record Attendance
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Modal -->
+<div class="modal fade" id="statsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-bar"></i> Curriculum Progress
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <div class="display-4 text-primary">
+                        {{ curriculum_progress.lessons_taught }}/{{ curriculum_progress.total_lessons }}
+                    </div>
+                    <p class="text-muted">Lessons Taught</p>
+                </div>
+                
+                <div class="progress mb-3" style="height: 20px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ curriculum_progress.percentage }}%">
+                        {{ curriculum_progress.percentage }}%
+                    </div>
+                </div>
+                
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Total Lessons:</span>
+                        <strong>{{ curriculum_progress.total_lessons }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Taught:</span>
+                        <strong class="text-success">{{ curriculum_progress.lessons_taught }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Remaining:</span>
+                        <strong class="text-warning">{{ curriculum_progress.lessons_remaining }}</strong>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>Completion:</span>
+                        <strong>{{ curriculum_progress.percentage }}%</strong>
+                    </li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn-group .btn {
+    flex: 1;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.badge {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
+.progress {
+    border-radius: 10px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date to today
+    const dateField = document.querySelector('#id_date_taught');
+    if (dateField && !dateField.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateField.value = today;
+    }
+    
+    // Set max date to today
+    if (dateField) {
+        const today = new Date().toISOString().split('T')[0];
+        dateField.max = today;
+    }
+    
+    // Validate attendance count
+    const attendanceField = document.querySelector('#id_attendance_count');
+    if (attendanceField) {
+        attendanceField.addEventListener('change', function() {
+            if (this.value < 0) {
+                this.value = 0;
+            }
+        });
+    }
+    
+    // Add stats button
+    const statsButton = document.createElement('button');
+    statsButton.type = 'button';
+    statsButton.className = 'btn btn-outline-light btn-sm float-end ms-2';
+    statsButton.innerHTML = '<i class="fas fa-chart-bar"></i> View Progress';
+    statsButton.setAttribute('data-bs-toggle', 'modal');
+    statsButton.setAttribute('data-bs-target', '#statsModal');
+    
+    const formHeader = document.querySelector('.card-header');
+    if (formHeader) {
+        formHeader.appendChild(statsButton);
+    }
+    
+    // Form submission
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Validate required fields
+            const dateTaught = document.querySelector('#id_date_taught').value;
+            
+            if (!dateTaught) {
+                e.preventDefault();
+                alert('Please select the date when this lesson was taught.');
+                return false;
+            }
+            
+            // Validate date is not in future
+            const today = new Date().toISOString().split('T')[0];
+            if (dateTaught > today) {
+                e.preventDefault();
+                alert('Date taught cannot be in the future.');
+                return false;
+            }
+            
+            // Show loading state
+            const submitButton = this.querySelector('button[type="submit"]');
+            if (submitButton) {
+                const originalText = submitButton.innerHTML;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                submitButton.disabled = true;
+                
+                // Restore button after 5 seconds
+                setTimeout(() => {
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                }, 5000);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

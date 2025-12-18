@@ -19,7 +19,7 @@ urlpatterns = [
     path("events/", include("events.urls")),
     path("announcements/", include("announcements.urls")),
     path("sermons/", include("sermons.urls")),
-    # path('curriculum/', include('curriculum.urls')),
+    path("curriculum/", include("curriculum.urls")),
     path("projects/", include("projects.urls")),
     path("dashboard/", include("dashboard.urls")),
     # Third-party

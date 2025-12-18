@@ -1,0 +1,81 @@
+{% extends 'curriculum/base_curriculum.html' %}
+
+{% block title %}Delete Lesson {{ lesson.lesson_number }} - Confirm{% endblock %}
+
+{% block curriculum_breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'curriculum:detail' lesson.curriculum.pk %}">{{ lesson.curriculum.title|truncatechars:20 }}</a></li>
+<li class="breadcrumb-item"><a href="{% url 'curriculum:lesson_detail' lesson.pk %}">Lesson {{ lesson.lesson_number }}</a></li>
+<li class="breadcrumb-item active">Delete</li>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 bg-danger">
+                    <h6 class="m-0 font-weight-bold text-white">
+                        <i class="fas fa-exclamation-triangle"></i> Confirm Lesson Deletion
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                        <h4 class="text-danger">Delete Lesson {{ lesson.lesson_number }}?</h4>
+                        <p class="lead">{{ lesson.title }}</p>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-book"></i> Lesson Details</h5>
+                        <p class="mb-2"><strong>Curriculum:</strong> {{ lesson.curriculum.title }}</p>
+                        <p class="mb-2"><strong>Scripture:</strong> {{ lesson.scripture_reference }}</p>
+                        <p class="mb-2"><strong>Status:</strong> 
+                            {% if lesson.is_taught %}
+                            <span class="badge bg-success">Taught</span>
+                            {% elif lesson.is_upcoming %}
+                            <span class="badge bg-warning">Upcoming</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Not Taught</span>
+                            {% endif %}
+                        </p>
+                        {% if lesson.teacher %}
+                        <p class="mb-0"><strong>Teacher:</strong> {{ lesson.teacher.get_full_name }}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Warning</h6>
+                        <p class="mb-0">This action will permanently delete the lesson and all associated data including:</p>
+                        <ul class="mb-0">
+                            <li>All attendance records ({{ lesson.attendances.count }} total)</li>
+                            <li>All uploaded files</li>
+                            <li>All progress records</li>
+                        </ul>
+                        <p class="mt-2 mb-0"><strong>This action cannot be undone!</strong></p>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Note</h6>
+                        <p class="mb-0">
+                            After deletion, you may need to renumber the remaining lessons in the curriculum.
+                        </p>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'curriculum:lesson_detail' lesson.curriculum.pk lesson.pk %}"  class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Yes, Delete Lesson
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

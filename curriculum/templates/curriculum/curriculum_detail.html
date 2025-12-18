@@ -1,0 +1,669 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ curriculum.title }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-0">{{ curriculum.title }}</h1>
+            <p class="text-muted mb-0">{{ curriculum.description }}</p>
+        </div>
+        <div class="btn-group">
+            <a href="{% url 'curriculum:list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+            {% if perms.curriculum.change_curriculum %}
+            <a href="{% url 'curriculum:update' curriculum.pk %}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Edit
+            </a>
+            {% endif %}
+            {% if perms.curriculum.add_lesson %}
+            <a href="{% url 'curriculum:lesson_create' curriculum.pk %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Lesson
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Progress
+                            </div>
+                            <div class="row no-gutters align-items-center">
+                                <div class="col-auto">
+                                    <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800">{{ progress_percentage }}%</div>
+                                </div>
+                                <div class="col">
+                                    <div class="progress progress-sm mr-2">
+                                        <div class="progress-bar bg-primary" role="progressbar" 
+                                             style="width: {{ progress_percentage }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Lessons Taught
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ lessons_taught }}/{{ total_lessons }}</div>
+                            <div class="mt-2 mb-0 text-muted text-xs">
+                                <span class="text-warning mr-2">{{ lessons_remaining }} remaining</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-book-open fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Attendance
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ avg_attendance }}</div>
+                            <div class="mt-2 mb-0 text-muted text-xs">
+                                <span>Recent lessons</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Duration
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ curriculum.duration_weeks }} weeks
+                            </div>
+                            <div class="mt-2 mb-0 text-muted text-xs">
+                                <span>{{ curriculum.start_date|date:"M d" }} - {{ curriculum.end_date|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-alt fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Curriculum Info -->
+        <div class="col-lg-4">
+            <!-- Curriculum Details Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle"></i> Curriculum Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <tr>
+                                <th width="40%">Type:</th>
+                                <td>
+                                    <span class="badge bg-info">{{ curriculum.get_curriculum_type_display }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    {% if curriculum.status == 'active' %}
+                                    <span class="badge bg-success">{{ curriculum.get_status_display }}</span>
+                                    {% elif curriculum.status == 'completed' %}
+                                    <span class="badge bg-secondary">{{ curriculum.get_status_display }}</span>
+                                    {% elif curriculum.status == 'draft' %}
+                                    <span class="badge bg-warning">{{ curriculum.get_status_display }}</span>
+                                    {% else %}
+                                    <span class="badge bg-info">{{ curriculum.get_status_display }}</span>
+                                    {% endif %}
+                                    {% if curriculum.is_active %}
+                                    <span class="badge bg-success ms-1">Active Now</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Target Group:</th>
+                                <td>
+                                    <i class="fas fa-users text-muted me-2"></i>
+                                    {{ curriculum.target_group.name }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Created By:</th>
+                                <td>{{ curriculum.created_by.get_full_name|default:curriculum.created_by.username }}</td>
+                            </tr>
+                            <tr>
+                                <th>Created On:</th>
+                                <td>{{ curriculum.created_at|date:"M d, Y" }}</td>
+                            </tr>
+                            {% if user_progress %}
+                            <tr>
+                                <th>Your Progress:</th>
+                                <td>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ user_progress }}%"></div>
+                                    </div>
+                                    <small>{{ user_completed_lessons }}/{{ total_lessons }} lessons completed</small>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+
+                    {% if curriculum.resource_file %}
+                    <div class="mt-4">
+                        <h6 class="font-weight-bold">Main Resource</h6>
+                        <div class="file-attachment p-3 border rounded">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-file-pdf fa-2x text-danger me-3"></i>
+                                <div>
+                                    <a href="{{ curriculum.resource_file.url }}" target="_blank" class="d-block">
+                                        <strong>Download Curriculum File</strong>
+                                    </a>
+                                    <small class="text-muted">{{ curriculum.resource_file.size|filesizeformat }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if curriculum.external_link %}
+                    <div class="mt-4">
+                        <h6 class="font-weight-bold">External Resource</h6>
+                        <a href="{{ curriculum.external_link }}" target="_blank" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-external-link-alt"></i> Visit Resource
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if not is_enrolled and user.is_authenticated %}
+                        <form method="post" action="{% url 'curriculum:enroll' curriculum.pk %}" class="mb-2">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-user-plus"></i> Enroll in Curriculum
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        {% if perms.curriculum.add_lesson %}
+                        <a href="{% url 'curriculum:lesson_create' curriculum.pk %}" class="btn btn-primary mb-2">
+                            <i class="fas fa-plus"></i> Add New Lesson
+                        </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'curriculum:statistics' %}" class="btn btn-info mb-2">
+                            <i class="fas fa-chart-bar"></i> View Statistics
+                        </a>
+                        
+                        <div class="btn-group w-100">
+                            <a href="{% url 'curriculum:update' curriculum.pk %}" class="btn btn-outline-warning">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                            <a href="{% url 'curriculum:delete' curriculum.pk %}" class="btn btn-outline-danger">
+                                <i class="fas fa-trash"></i> Delete
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upcoming Lessons Card -->
+            <div class="card shadow">
+                <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-calendar"></i> Upcoming Lessons
+                    </h6>
+                    <span class="badge bg-primary">{{ upcoming_lessons|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if upcoming_lessons %}
+                    <div class="list-group list-group-flush">
+                        {% for lesson in upcoming_lessons %}
+                        <a href="{% url 'curriculum:lesson_detail' lesson.curriculum.pk lesson.pk %}" 
+                        class="list-group-item list-group-item-action border-0 py-3">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">Lesson {{ lesson.lesson_number }}</h6>
+                                <small>
+                                    {% if lesson.scheduled_date %}
+                                    {{ lesson.scheduled_date|date:"M d" }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <p class="mb-1">{{ lesson.title|truncatechars:40 }}</p>
+                            <small class="text-muted">
+                                <i class="fas fa-book-bible"></i> {{ lesson.scripture_reference }}
+                                {% if lesson.teacher %}
+                                <br><i class="fas fa-user"></i> {{ lesson.teacher.get_full_name|default:lesson.teacher.username }}
+                                {% endif %}
+                            </small>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">No upcoming lessons scheduled</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Lessons & Activity -->
+        <div class="col-lg-8">
+            <!-- Lessons Card -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-light py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-book"></i> All Lessons ({{ curriculum.total_lessons }})
+                    </h6>
+                    <div>
+                        <span class="badge bg-success me-2">{{ lessons_taught }} taught</span>
+                        <span class="badge bg-warning">{{ lessons_remaining }} remaining</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if curriculum.lessons.all %}
+                    <div class="accordion" id="lessonsAccordion">
+                        {% for lesson in curriculum.lessons.all %}
+                        <div class="card mb-2 {% if lesson.is_taught %}border-success{% elif lesson.is_upcoming %}border-warning{% else %}border-primary{% endif %}">
+                            <div class="card-header py-2" id="heading{{ lesson.pk }}">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <button class="btn btn-link btn-block text-left p-0" type="button" 
+                                                data-bs-toggle="collapse" data-bs-target="#collapse{{ lesson.pk }}" 
+                                                aria-expanded="false" aria-controls="collapse{{ lesson.pk }}">
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3">
+                                                    <span class="badge bg-secondary rounded-circle p-2">#{{ lesson.lesson_number }}</span>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ lesson.title }}</h6>
+                                                    <small class="text-muted">{{ lesson.scripture_reference }}</small>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        {% if lesson.is_taught %}
+                                        <span class="badge bg-success me-2">
+                                            <i class="fas fa-check"></i> Taught {{ lesson.date_taught|date:"M d" }}
+                                        </span>
+                                        {% elif lesson.is_upcoming %}
+                                        <span class="badge bg-warning me-2">
+                                            <i class="fas fa-calendar"></i> {{ lesson.scheduled_date|date:"M d" }}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-secondary me-2">Not scheduled</span>
+                                        {% endif %}
+                                        
+                                        <span class="badge bg-info me-2">
+                                            {{ lesson.get_difficulty_display }}
+                                        </span>
+                                        
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'curriculum:lesson_detail' lesson.curriculum.pk lesson.pk %}" 
+                                               class="btn btn-info" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if perms.curriculum.change_lesson %}
+                                            <a href="{% url 'curriculum:lesson_update' lesson.curriculum.pk lesson.pk %}" 
+                                               class="btn btn-warning" title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="collapse{{ lesson.pk }}" class="collapse" aria-labelledby="heading{{ lesson.pk }}" 
+                                 data-bs-parent="#lessonsAccordion">
+                                <div class="card-body">
+                                    <p><strong>Objective:</strong> {{ lesson.objective }}</p>
+                                    
+                                    {% if lesson.introduction %}
+                                    <p><strong>Introduction:</strong> {{ lesson.introduction|truncatewords:50 }}</p>
+                                    {% endif %}
+                                    
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <h6>Details:</h6>
+                                            <ul class="list-unstyled">
+                                                <li><i class="far fa-clock me-2"></i> {{ lesson.estimated_duration }} minutes</li>
+                                                {% if lesson.teacher %}
+                                                <li><i class="fas fa-user me-2"></i> {{ lesson.teacher.get_full_name }}</li>
+                                                {% endif %}
+                                                {% if lesson.attendance_count > 0 %}
+                                                <li><i class="fas fa-users me-2"></i> {{ lesson.attendance_count }} attended</li>
+                                                {% endif %}
+                                            </ul>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Resources:</h6>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                {% if lesson.presentation_file %}
+                                                <a href="{{ lesson.presentation_file.url }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-file-powerpoint"></i> Slides
+                                                </a>
+                                                {% endif %}
+                                                {% if lesson.handout_file %}
+                                                <a href="{{ lesson.handout_file.url }}" class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-file-alt"></i> Handout
+                                                </a>
+                                                {% endif %}
+                                                {% if lesson.audio_video %}
+                                                <a href="{{ lesson.audio_video.url }}" class="btn btn-sm btn-outline-danger">
+                                                    <i class="fas fa-file-video"></i> Media
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if perms.curriculum.add_lessonattendance and not lesson.is_taught %}
+                                    <div class="mt-3">
+                                        <a href="{% url 'curriculum:lesson_mark_taught' lesson.curriculum.pk lesson.pk %}" 
+                                           class="btn btn-sm btn-success">
+                                            <i class="fas fa-check-circle"></i> Mark as Taught
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-book fa-4x text-muted mb-3"></i>
+                        <h5>No lessons added yet</h5>
+                        <p class="text-muted">Add lessons to this curriculum to get started</p>
+                        {% if perms.curriculum.add_lesson %}
+                        <a href="{% url 'curriculum:lesson_create' curriculum.pk %}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add First Lesson
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Recent Activity Card -->
+            <div class="card shadow">
+                <div class="card-header bg-light py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history"></i> Recent Activity
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_lessons %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Lesson</th>
+                                    <th>Date Taught</th>
+                                    <th>Teacher</th>
+                                    <th>Attendance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lesson in recent_lessons %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'curriculum:lesson_detail' lesson.curriculum.pk lesson.pk %}">
+                                            Lesson {{ lesson.lesson_number }}: {{ lesson.title|truncatechars:30 }}
+                                        </a>
+                                    </td>
+                                    <td>{{ lesson.date_taught|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if lesson.teacher %}
+                                        {{ lesson.teacher.get_full_name|default:lesson.teacher.username }}
+                                        {% else %}
+                                        <span class="text-muted">Not assigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge {% if lesson.attendance_count > 0 %}bg-success{% else %}bg-secondary{% endif %}">
+                                            {{ lesson.attendance_count }} attended
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'curriculum:lesson_detail' lesson.curriculum.pk lesson.pk %}" 
+                                               class="btn btn-info" title="View">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            {% if perms.curriculum.add_lessonattendance %}
+                                            <a href="{% url 'curriculum:take_attendance' lesson.curriculum.pk lesson.pk %}" 
+                                               class="btn btn-success" title="Attendance">
+                                                <i class="fas fa-user-check"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">No lessons have been taught yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enrollment Modal -->
+<div class="modal fade" id="enrollmentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus"></i> Enroll in Curriculum
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to enroll in this curriculum?</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Benefits of Enrollment:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Track your personal progress</li>
+                        <li>Mark lessons as completed</li>
+                        <li>Receive notifications for new lessons</li>
+                        <li>Access to student materials</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'curriculum:enroll' curriculum.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Yes, Enroll Me
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.accordion .card-header {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.accordion .btn-link {
+    color: #495057;
+    text-decoration: none;
+    width: 100%;
+    text-align: left;
+}
+
+.accordion .btn-link:hover {
+    color: #007bff;
+}
+
+.file-attachment {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+.border-success {
+    border-left: 4px solid #28a745 !important;
+}
+
+.border-warning {
+    border-left: 4px solid #ffc107 !important;
+}
+
+.border-primary {
+    border-left: 4px solid #007bff !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-expand first lesson
+    const firstLesson = document.querySelector('.collapse');
+    if (firstLesson) {
+        firstLesson.classList.add('show');
+    }
+    
+    // Enrollment modal
+    const enrollButtons = document.querySelectorAll('button[type="submit"]');
+    enrollButtons.forEach(button => {
+        if (button.textContent.includes('Enroll')) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const enrollmentModal = new bootstrap.Modal(document.querySelector('#enrollmentModal'));
+                enrollmentModal.show();
+            });
+        }
+    });
+    
+    // Lesson filtering
+    const filterButtons = document.createElement('div');
+    filterButtons.className = 'd-flex flex-wrap gap-2 mb-3';
+    filterButtons.innerHTML = `
+        <button type="button" class="btn btn-sm btn-outline-success" id="showTaught">
+            <i class="fas fa-check"></i> Taught Lessons
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-warning" id="showUpcoming">
+            <i class="fas fa-calendar"></i> Upcoming
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="showAll">
+            <i class="fas fa-list"></i> Show All
+        </button>
+    `;
+    
+    const lessonsCard = document.querySelector('.card-body:has(#lessonsAccordion)');
+    if (lessonsCard) {
+        lessonsCard.insertBefore(filterButtons, lessonsCard.firstChild);
+    }
+    
+    // Filter functionality
+    document.querySelector('#showTaught')?.addEventListener('click', function() {
+        document.querySelectorAll('.accordion .card').forEach(card => {
+            if (card.classList.contains('border-success')) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+    
+    document.querySelector('#showUpcoming')?.addEventListener('click', function() {
+        document.querySelectorAll('.accordion .card').forEach(card => {
+            if (card.classList.contains('border-warning')) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+    
+    document.querySelector('#showAll')?.addEventListener('click', function() {
+        document.querySelectorAll('.accordion .card').forEach(card => {
+            card.style.display = '';
+        });
+    });
+    
+    // Print curriculum
+    const printButton = document.createElement('button');
+    printButton.className = 'btn btn-outline-info btn-sm ms-2';
+    printButton.innerHTML = '<i class="fas fa-print"></i> Print';
+    printButton.addEventListener('click', function() {
+        window.print();
+    });
+    
+    const headerActions = document.querySelector('.btn-group');
+    if (headerActions) {
+        headerActions.appendChild(printButton);
+    }
+});
+</script>
+{% endblock %}

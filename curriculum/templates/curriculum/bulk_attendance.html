@@ -1,0 +1,631 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Bulk Attendance - Lesson {{ lesson.lesson_number }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-users"></i> 
+                    Bulk Attendance: Lesson {{ lesson.lesson_number }}
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <!-- Lesson Info -->
+                <div class="card mb-4 border-info">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5>{{ lesson.title }}</h5>
+                                <p class="mb-2">
+                                    <i class="fas fa-book-bible"></i> 
+                                    <strong>Scripture:</strong> {{ lesson.scripture_reference }}
+                                </p>
+                                <p class="mb-0">
+                                    <i class="fas fa-calendar"></i> 
+                                    <strong>Date Taught:</strong> {{ lesson.date_taught|date:"F d, Y" }}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="display-6 text-primary">
+                                    {{ members|length }}
+                                </div>
+                                <p class="text-muted">Members in Group</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <input type="hidden" name="lesson" value="{{ lesson.pk }}">
+                    
+                    <!-- Attendance Controls -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-sliders-h"></i> Quick Controls
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-4">
+                                <div class="col-md-12">
+                                    <div class="btn-group w-100" role="group">
+                                        <button type="button" class="btn btn-outline-success" id="markAllPresent">
+                                            <i class="fas fa-check-circle"></i> Mark All Present
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" id="markAllAbsent">
+                                            <i class="fas fa-times-circle"></i> Mark All Absent
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info" id="toggleAll">
+                                            <i class="fas fa-exchange-alt"></i> Toggle All
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning" id="resetAll">
+                                            <i class="fas fa-redo"></i> Reset All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="card border-success">
+                                        <div class="card-body text-center">
+                                            <div class="display-4 text-success" id="presentCount">0</div>
+                                            <p class="text-muted">Present</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-danger">
+                                        <div class="card-body text-center">
+                                            <div class="display-4 text-danger" id="absentCount">0</div>
+                                            <p class="text-muted">Absent</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-info">
+                                        <div class="card-body text-center">
+                                            <div class="display-4 text-info" id="totalCount">{{ members|length }}</div>
+                                            <p class="text-muted">Total</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Member List -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-list"></i> Member Attendance
+                            </h5>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="showPhotos">
+                                <label class="form-check-label" for="showPhotos">
+                                    <i class="fas fa-image"></i> Show Photos
+                                </label>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="attendanceTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="50">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="selectAll">
+                                                    <label class="form-check-label" for="selectAll"></label>
+                                                </div>
+                                            </th>
+                                            <th>Member</th>
+                                            <th>Contact</th>
+                                            <th>Status</th>
+                                            <th>Attendance</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for member in members %}
+                                        <tr>
+                                            <td>
+                                                <div class="form-check">
+                                                    <input class="form-check-input attendance-checkbox" 
+                                                           type="checkbox" 
+                                                           id="member_{{ member.id }}" 
+                                                           name="member_{{ member.id }}" 
+                                                           value="1" 
+                                                           checked>
+                                                    <label class="form-check-label" for="member_{{ member.id }}"></label>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="member-photo me-3" style="display: none;">
+                                                        {% if member.profile_picture %}
+                                                        <img src="{{ member.profile_picture.url }}" 
+                                                             class="rounded-circle" 
+                                                             width="40" height="40" 
+                                                             alt="{{ member.get_full_name }}">
+                                                        {% else %}
+                                                        <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" 
+                                                             style="width: 40px; height: 40px;">
+                                                            <i class="fas fa-user text-white"></i>
+                                                        </div>
+                                                        {% endif %}
+                                                    </div>
+                                                    <div>
+                                                        <strong>{{ member.get_full_name }}</strong>
+                                                        <br>
+                                                        <small class="text-muted">{{ member.role|default:"Member" }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small>
+                                                    {% if member.email %}
+                                                    <i class="fas fa-envelope me-1"></i> {{ member.email }}<br>
+                                                    {% endif %}
+                                                    {% if member.phone %}
+                                                    <i class="fas fa-phone me-1"></i> {{ member.phone }}
+                                                    {% endif %}
+                                                </small>
+                                            </td>
+                                            <td>
+                                                {% if member.status == 'active' %}
+                                                <span class="badge bg-success">Active</span>
+                                                {% elif member.status == 'visitor' %}
+                                                <span class="badge bg-info">Visitor</span>
+                                                {% else %}
+                                                <span class="badge bg-warning">{{ member.get_status_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button" class="btn btn-success attendance-btn present-btn" 
+                                                            data-member="{{ member.id }}">
+                                                        <i class="fas fa-check"></i> Present
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger attendance-btn absent-btn" 
+                                                            data-member="{{ member.id }}">
+                                                        <i class="fas fa-times"></i> Absent
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-5">
+                                                <i class="fas fa-users-slash fa-3x text-muted mb-3"></i>
+                                                <h5>No members in this group</h5>
+                                                <p class="text-muted">Add members to the group to record attendance</p>
+                                                {% if lesson.curriculum.target_group %}
+                                                    <a href="{% url 'groups:add_member' lesson.curriculum.target_group.pk %}" 
+                                                    class="btn btn-primary">
+                                                        <i class="fas fa-user-plus"></i> Add Members
+                                                    </a>
+                                                {% else %}
+                                                    <p class="text-muted">No target group assigned to this curriculum. Cannot add members.</p>
+                                                {% endif %}
+
+
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notes -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-sticky-note"></i> Notes & Observations
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="attendance_notes" class="form-label">Additional Notes</label>
+                                <textarea class="form-control" id="attendance_notes" name="attendance_notes" 
+                                          rows="3" placeholder="Any observations about today's attendance..."></textarea>
+                                <small class="form-text text-muted">
+                                    Optional: Note any reasons for absences, visitors, or other observations
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Summary -->
+                    <div class="card mb-4 border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-clipboard-check"></i> Attendance Summary
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Today's Statistics:</h6>
+                                    <ul class="list-unstyled">
+                                        <li>
+                                            <i class="fas fa-users text-success me-2"></i>
+                                            <span id="summaryPresent">0</span> members present
+                                        </li>
+                                        <li>
+                                            <i class="fas fa-user-slash text-danger me-2"></i>
+                                            <span id="summaryAbsent">0</span> members absent
+                                        </li>
+                                        <li>
+                                            <i class="fas fa-percentage text-primary me-2"></i>
+                                            <span id="summaryPercentage">0%</span> attendance rate
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Curriculum Progress:</h6>
+                                    <ul class="list-unstyled">
+                                        <li>
+                                            <i class="fas fa-book-open text-info me-2"></i>
+                                            Lesson {{ lesson.lesson_number }} of {{ lesson.curriculum.total_lessons }}
+                                        </li>
+                                        <li>
+                                            <i class="fas fa-chart-line text-warning me-2"></i>
+                                            {{ curriculum_progress.percentage }}% curriculum complete
+                                        </li>
+                                        <li>
+                                            <i class="fas fa-calendar-alt text-success me-2"></i>
+                                            Next lesson: 
+                                            {% if next_lesson %}
+                                            Lesson {{ next_lesson.lesson_number }}
+                                            {% else %}
+                                            Curriculum complete
+                                            {% endif %}
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        {% if lesson %}
+                            <a href="{% url 'curriculum:lesson_detail' lesson.curriculum.pk lesson.pk %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        {% else %}
+                            <a href="#" class="btn btn-outline-secondary disabled">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        {% endif %}
+
+                        
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-success" id="submitAttendance">
+                                <i class="fas fa-save"></i> Save Attendance Records
+                            </button>
+                            
+                            <button type="button" class="btn btn-outline-primary" id="printSummary">
+                                <i class="fas fa-print"></i> Print Summary
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Print Modal -->
+<div class="modal fade" id="printModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-print"></i> Attendance Summary
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="printContent">
+                <div class="text-center mb-4">
+                    <h4>Attendance Record</h4>
+                    <h5>Lesson {{ lesson.lesson_number }}: {{ lesson.title }}</h5>
+                    <p class="text-muted">{{ lesson.date_taught|date:"F d, Y" }}</p>
+                </div>
+                
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Member</th>
+                            <th>Status</th>
+                            <th>Attendance</th>
+                        </tr>
+                    </thead>
+                    <tbody id="printTableBody">
+                        <!-- Will be populated by JavaScript -->
+                    </tbody>
+                </table>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6>Summary:</h6>
+                        <ul class="list-unstyled">
+                            <li>Total Members: <span id="printTotal">0</span></li>
+                            <li>Present: <span id="printPresent">0</span></li>
+                            <li>Absent: <span id="printAbsent">0</span></li>
+                            <li>Attendance Rate: <span id="printRate">0%</span></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <p class="text-muted">Recorded by: {{ user.get_full_name }}</p>
+                        <p class="text-muted">Date: {{ current_date|date:"F d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print"></i> Print
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.attendance-btn.active {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.table tbody tr {
+    transition: background-color 0.2s;
+}
+
+.table tbody tr.present-row {
+    background-color: rgba(40, 167, 69, 0.1);
+}
+
+.table tbody tr.absent-row {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.btn-group .btn {
+    min-width: 80px;
+}
+
+.card {
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.display-4 {
+    font-weight: 300;
+    line-height: 1.2;
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize counts
+    function updateCounts() {
+        const total = document.querySelectorAll('.attendance-checkbox').length;
+        const present = document.querySelectorAll('.attendance-checkbox:checked').length;
+        const absent = total - present;
+        const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+        
+        // Update counters
+        document.querySelector('#presentCount').textContent = present;
+        document.querySelector('#absentCount').textContent = absent;
+        document.querySelector('#totalCount').textContent = total;
+        
+        // Update summary
+        document.querySelector('#summaryPresent').textContent = present;
+        document.querySelector('#summaryAbsent').textContent = absent;
+        document.querySelector('#summaryPercentage').textContent = percentage + '%';
+        
+        // Update select all checkbox
+        const selectAll = document.querySelector('#selectAll');
+        if (present === total) {
+            selectAll.checked = true;
+            selectAll.indeterminate = false;
+        } else if (present === 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+        } else {
+            selectAll.checked = false;
+            selectAll.indeterminate = true;
+        }
+        
+        // Update row colors
+        document.querySelectorAll('.attendance-checkbox').forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            if (checkbox.checked) {
+                row.classList.add('present-row');
+                row.classList.remove('absent-row');
+            } else {
+                row.classList.add('absent-row');
+                row.classList.remove('present-row');
+            }
+        });
+    }
+    
+    // Initialize counts
+    updateCounts();
+    
+    // Select all checkbox
+    document.querySelector('#selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.attendance-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+        updateCounts();
+    });
+    
+    // Individual checkbox changes
+    document.querySelectorAll('.attendance-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', updateCounts);
+    });
+    
+    // Quick control buttons
+    document.querySelector('#markAllPresent').addEventListener('click', function() {
+        document.querySelectorAll('.attendance-checkbox').forEach(checkbox => {
+            checkbox.checked = true;
+        });
+        updateCounts();
+    });
+    
+    document.querySelector('#markAllAbsent').addEventListener('click', function() {
+        document.querySelectorAll('.attendance-checkbox').forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        updateCounts();
+    });
+    
+    document.querySelector('#toggleAll').addEventListener('click', function() {
+        document.querySelectorAll('.attendance-checkbox').forEach(checkbox => {
+            checkbox.checked = !checkbox.checked;
+        });
+        updateCounts();
+    });
+    
+    document.querySelector('#resetAll').addEventListener('click', function() {
+        document.querySelectorAll('.attendance-checkbox').forEach(checkbox => {
+            checkbox.checked = true; // Default to present
+        });
+        updateCounts();
+    });
+    
+    // Present/absent buttons
+    document.querySelectorAll('.present-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const memberId = this.dataset.member;
+            const checkbox = document.querySelector(`#member_${memberId}`);
+            checkbox.checked = true;
+            updateCounts();
+        });
+    });
+    
+    document.querySelectorAll('.absent-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const memberId = this.dataset.member;
+            const checkbox = document.querySelector(`#member_${memberId}`);
+            checkbox.checked = false;
+            updateCounts();
+        });
+    });
+    
+    // Show photos toggle
+    document.querySelector('#showPhotos').addEventListener('change', function() {
+        const photos = document.querySelectorAll('.member-photo');
+        photos.forEach(photo => {
+            photo.style.display = this.checked ? 'block' : 'none';
+        });
+    });
+    
+    // Print summary
+    document.querySelector('#printSummary').addEventListener('click', function() {
+        const total = document.querySelectorAll('.attendance-checkbox').length;
+        const present = document.querySelectorAll('.attendance-checkbox:checked').length;
+        const absent = total - present;
+        const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+        
+        // Update print content
+        document.querySelector('#printTotal').textContent = total;
+        document.querySelector('#printPresent').textContent = present;
+        document.querySelector('#printAbsent').textContent = absent;
+        document.querySelector('#printRate').textContent = percentage + '%';
+        
+        // Build print table
+        const tableBody = document.querySelector('#printTableBody');
+        tableBody.innerHTML = '';
+        
+        document.querySelectorAll('tbody tr').forEach(row => {
+            const memberName = row.querySelector('strong').textContent;
+            const memberRole = row.querySelector('.text-muted').textContent;
+            const isPresent = row.querySelector('.attendance-checkbox').checked;
+            
+            const tableRow = document.createElement('tr');
+            tableRow.innerHTML = `
+                <td>
+                    <strong>${memberName}</strong><br>
+                    <small class="text-muted">${memberRole}</small>
+                </td>
+                <td>
+                    ${row.querySelector('td:nth-child(3)').innerHTML}
+                </td>
+                <td>
+                    ${isPresent ? 
+                      '<span class="badge bg-success">Present</span>' : 
+                      '<span class="badge bg-danger">Absent</span>'}
+                </td>
+            `;
+            tableBody.appendChild(tableRow);
+        });
+        
+        // Show print modal
+        const printModal = new bootstrap.Modal(document.querySelector('#printModal'));
+        printModal.show();
+    });
+    
+    // Form submission
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const presentCount = document.querySelectorAll('.attendance-checkbox:checked').length;
+            const totalCount = document.querySelectorAll('.attendance-checkbox').length;
+            
+            if (presentCount === 0 && totalCount > 0) {
+                if (!confirm('No members are marked as present. Are you sure you want to save?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+            
+            // Show loading state
+            const submitButton = document.querySelector('#submitAttendance');
+            if (submitButton) {
+                const originalText = submitButton.innerHTML;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                submitButton.disabled = true;
+                
+                // Restore button after 5 seconds
+                setTimeout(() => {
+                    submitButton.innerHTML = originalText;
+                    submitButton.disabled = false;
+                }, 5000);
+            }
+        });
+    }
+    
+    // Add export button
+    const exportButton = document.createElement('button');
+    exportButton.type = 'button';
+    exportButton.className = 'btn btn-outline-light btn-sm float-end';
+    exportButton.innerHTML = '<i class="fas fa-download"></i> Export';
+    exportButton.setAttribute('data-bs-toggle', 'modal');
+    exportButton.setAttribute('data-bs-target', '#printModal');
+    
+    const formHeader = document.querySelector('.card-header');
+    if (formHeader) {
+        formHeader.appendChild(exportButton);
+    }
+});
+</script>
+{% endblock %}

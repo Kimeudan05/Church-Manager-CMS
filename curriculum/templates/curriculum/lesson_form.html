@@ -1,0 +1,741 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title|default:"Lesson Form" }} - Church CMS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-{% if submit_text == 'Create Lesson' %}plus{% else %}edit{% endif %}"></i> 
+                    {{ title|default:"Lesson Form" }}
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Basic Information -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-info-circle"></i> Lesson Details
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2 mb-3">
+                                    {{ form.lesson_number|as_crispy_field }}
+                                    <div class="form-text">
+                                        <small class="text-muted">
+                                            Total in curriculum: {{ curriculum.total_lessons }}
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.title|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    {{ form.scripture_reference|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    {{ form.objective|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lesson Structure -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-layer-group"></i> Lesson Structure
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    {{ form.difficulty|as_crispy_field }}
+                                    <div class="form-text" id="difficultyHelp">
+                                        {% if form.difficulty.value == 'beginner' %}
+                                        <span class="text-success">
+                                            <i class="fas fa-seedling"></i> 
+                                            Suitable for new believers or basic topics
+                                        </span>
+                                        {% elif form.difficulty.value == 'intermediate' %}
+                                        <span class="text-warning">
+                                            <i class="fas fa-tree"></i> 
+                                            For growing Christians with some Bible knowledge
+                                        </span>
+                                        {% elif form.difficulty.value == 'advanced' %}
+                                        <span class="text-danger">
+                                            <i class="fas fa-mountain"></i> 
+                                            Deep theological concepts for mature believers
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    {{ form.estimated_duration|as_crispy_field }}
+                                    <div class="form-text">
+                                        <i class="fas fa-clock"></i> 
+                                        Typical Sunday School: 45-60 minutes
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    {{ form.scheduled_date|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lesson Content -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-book-open"></i> Lesson Content
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="accordion" id="contentAccordion">
+                                <!-- Introduction -->
+                                <div class="card mb-3">
+                                    <div class="card-header" id="headingIntro">
+                                        <h6 class="mb-0">
+                                            <button class="btn btn-link" type="button" data-bs-toggle="collapse" 
+                                                    data-bs-target="#collapseIntro" aria-expanded="true">
+                                                <i class="fas fa-door-open"></i> Introduction
+                                            </button>
+                                        </h6>
+                                    </div>
+                                    <div id="collapseIntro" class="collapse show" aria-labelledby="headingIntro">
+                                        <div class="card-body">
+                                            {{ form.introduction|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Teacher Guide -->
+                                <div class="card mb-3">
+                                    <div class="card-header" id="headingTeacher">
+                                        <h6 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-bs-toggle="collapse" 
+                                                    data-bs-target="#collapseTeacher" aria-expanded="false">
+                                                <i class="fas fa-chalkboard-teacher"></i> Teacher's Guide
+                                            </button>
+                                        </h6>
+                                    </div>
+                                    <div id="collapseTeacher" class="collapse" aria-labelledby="headingTeacher">
+                                        <div class="card-body">
+                                            {{ form.teacher_guide|as_crispy_field }}
+                                            <div class="form-text">
+                                                <i class="fas fa-lightbulb"></i> 
+                                                Include teaching tips, key points, and preparation notes.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Student Materials -->
+                                <div class="card mb-3">
+                                    <div class="card-header" id="headingStudent">
+                                        <h6 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-bs-toggle="collapse" 
+                                                    data-bs-target="#collapseStudent" aria-expanded="false">
+                                                <i class="fas fa-user-graduate"></i> Student Materials
+                                            </button>
+                                        </h6>
+                                    </div>
+                                    <div id="collapseStudent" class="collapse" aria-labelledby="headingStudent">
+                                        <div class="card-body">
+                                            {{ form.student_materials|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Activities -->
+                                <div class="card mb-3">
+                                    <div class="card-header" id="headingActivities">
+                                        <h6 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-bs-toggle="collapse" 
+                                                    data-bs-target="#collapseActivities" aria-expanded="false">
+                                                <i class="fas fa-running"></i> Activities & Exercises
+                                            </button>
+                                        </h6>
+                                    </div>
+                                    <div id="collapseActivities" class="collapse" aria-labelledby="headingActivities">
+                                        <div class="card-body">
+                                            {{ form.activities|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Discussion Questions -->
+                                <div class="card mb-3">
+                                    <div class="card-header" id="headingDiscussion">
+                                        <h6 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-bs-toggle="collapse" 
+                                                    data-bs-target="#collapseDiscussion" aria-expanded="false">
+                                                <i class="fas fa-comments"></i> Discussion Questions
+                                            </button>
+                                        </h6>
+                                    </div>
+                                    <div id="collapseDiscussion" class="collapse" aria-labelledby="headingDiscussion">
+                                        <div class="card-body">
+                                            {{ form.discussion_questions|as_crispy_field }}
+                                            <div class="form-text">
+                                                <i class="fas fa-question-circle"></i> 
+                                                Include questions for small group discussion.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Conclusion -->
+                                <div class="card mb-3">
+                                    <div class="card-header" id="headingConclusion">
+                                        <h6 class="mb-0">
+                                            <button class="btn btn-link collapsed" type="button" data-bs-toggle="collapse" 
+                                                    data-bs-target="#collapseConclusion" aria-expanded="false">
+                                                <i class="fas fa-flag-checkered"></i> Conclusion
+                                            </button>
+                                        </h6>
+                                    </div>
+                                    <div id="collapseConclusion" class="collapse" aria-labelledby="headingConclusion">
+                                        <div class="card-body">
+                                            {{ form.conclusion|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resources & Assignments -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">
+                                <i class="fas fa-paperclip"></i> Resources & Assignments
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.teacher|as_crispy_field }}
+                                    <div class="form-text">
+                                        <i class="fas fa-user-tie"></i> 
+                                        Assign a teacher from the target group leaders.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="mt-4 mb-3">File Attachments:</h6>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.presentation_file|as_crispy_field }}
+                                    {% if form.instance.presentation_file %}
+                                    <div class="mt-2">
+                                        <a href="{{ form.instance.presentation_file.url }}" target="_blank" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download"></i> Current File
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.handout_file|as_crispy_field }}
+                                    {% if form.instance.handout_file %}
+                                    <div class="mt-2">
+                                        <a href="{{ form.instance.handout_file.url }}" target="_blank" 
+                                           class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-download"></i> Current File
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    {{ form.audio_video|as_crispy_field }}
+                                    {% if form.instance.audio_video %}
+                                    <div class="mt-2">
+                                        <a href="{{ form.instance.audio_video.url }}" target="_blank" 
+                                           class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-play"></i> Play File
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    {{ form.additional_files|as_crispy_field }}
+                                    {% if form.instance.additional_files %}
+                                    <div class="mt-2">
+                                        <a href="{{ form.instance.additional_files.url }}" target="_blank" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-download"></i> Current File
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Lesson Preview -->
+                    <div class="card mb-4 border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-eye"></i> Lesson Preview
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="preview-container">
+                                <h5 id="previewTitle" class="text-primary">
+                                    {% if form.title.value %}
+                                    Lesson {{ form.lesson_number.value|default:"1" }}: {{ form.title.value }}
+                                    {% else %}
+                                    Lesson 1: Lesson Title
+                                    {% endif %}
+                                </h5>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-book-bible"></i> 
+                                            <span id="previewScripture">
+                                                {% if form.scripture_reference.value %}
+                                                {{ form.scripture_reference.value }}
+                                                {% else %}
+                                                Scripture Reference
+                                                {% endif %}
+                                            </span>
+                                        </small>
+                                    </div>
+                                    <div class="col-md-6 text-end">
+                                        <span id="previewDuration" class="badge bg-info">
+                                            {% if form.estimated_duration.value %}
+                                            {{ form.estimated_duration.value }} minutes
+                                            {% else %}
+                                            60 minutes
+                                            {% endif %}
+                                        </span>
+                                        <span id="previewDifficulty" class="badge ms-2">
+                                            {% if form.difficulty.value == 'beginner' %}
+                                            Beginner
+                                            {% elif form.difficulty.value == 'intermediate' %}
+                                            Intermediate
+                                            {% elif form.difficulty.value == 'advanced' %}
+                                            Advanced
+                                            {% else %}
+                                            Beginner
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="preview-section mb-3">
+                                    <h6>Learning Objective:</h6>
+                                    <div id="previewObjective" class="preview-content">
+                                        {% if form.objective.value %}
+                                        {{ form.objective.value|linebreaks }}
+                                        {% else %}
+                                        <p class="text-muted">Learning objective will appear here...</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="preview-section">
+                                    <h6>Resources:</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-file-powerpoint"></i> Presentation
+                                        </span>
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-file-alt"></i> Handout
+                                        </span>
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-file-video"></i> Video/Audio
+                                        </span>
+                                        <span class="badge bg-light text-dark">
+                                            <i class="fas fa-file"></i> Additional
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Errors -->
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Please fix the errors below:</h5>
+                        <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Submit Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% if object %}
+                                {% url 'curriculum:lesson_detail' object.curriculum.pk object.pk %}
+                            {% else %}
+                                {% url 'curriculum:detail' curriculum.pk %}
+                            {% endif %}"
+                        class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                        
+                        <div class="btn-group">
+                            <button type="submit" name="save_draft" class="btn btn-outline-warning" value="draft">
+                                <i class="fas fa-save"></i> Save as Draft
+                            </button>
+                            <button type="submit" name="save_publish" class="btn btn-primary">
+                                <i class="fas fa-book"></i> {{ submit_text|default:"Save Lesson" }}
+                            </button>
+                            
+                            {% if not object %}
+                            <button type="submit" name="save_and_add_another" class="btn btn-outline-primary">
+                                <i class="fas fa-plus"></i> Save & Add Another
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-question-circle"></i> Lesson Creation Guide
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Difficulty Levels:</h6>
+                <ul>
+                    <li>
+                        <span class="badge bg-success">Beginner</span> - 
+                        New believers, children, or basic biblical concepts
+                    </li>
+                    <li>
+                        <span class="badge bg-warning">Intermediate</span> - 
+                        Growing Christians with foundational Bible knowledge
+                    </li>
+                    <li>
+                        <span class="badge bg-danger">Advanced</span> - 
+                        Mature believers ready for deep theological study
+                    </li>
+                </ul>
+                
+                <h6 class="mt-3">Lesson Structure:</h6>
+                <ul>
+                    <li>
+                        <strong>Introduction:</strong> Hook to engage students and introduce topic
+                    </li>
+                    <li>
+                        <strong>Teacher's Guide:</strong> Instructions and tips for teachers
+                    </li>
+                    <li>
+                        <strong>Student Materials:</strong> Handouts, worksheets, or reading assignments
+                    </li>
+                    <li>
+                        <strong>Activities:</strong> Interactive exercises and group work
+                    </li>
+                    <li>
+                        <strong>Discussion Questions:</strong> Questions to facilitate group discussion
+                    </li>
+                    <li>
+                        <strong>Conclusion:</strong> Summary and application points
+                    </li>
+                </ul>
+                
+                <h6 class="mt-3">Teaching Tips:</h6>
+                <ul>
+                    <li>
+                        <strong>Clear Objective:</strong> Each lesson should have one main learning goal
+                    </li>
+                    <li>
+                        <strong>Scripture Focus:</strong> Base lessons on specific Bible passages
+                    </li>
+                    <li>
+                        <strong>Practical Application:</strong> Show how to apply biblical truth to life
+                    </li>
+                    <li>
+                        <strong>Interactive Elements:</strong> Include discussion, activities, and reflection
+                    </li>
+                    <li>
+                        <strong>Time Management:</strong> Plan for introduction, teaching, activities, and conclusion
+                    </li>
+                </ul>
+                
+                <div class="alert alert-success mt-3">
+                    <i class="fas fa-lightbulb"></i> 
+                    <strong>Best Practices:</strong>
+                    <ul class="mb-0">
+                        <li>Start with a clear, measurable learning objective</li>
+                        <li>Use multiple teaching methods (visual, auditory, kinesthetic)</li>
+                        <li>Include both individual and group activities</li>
+                        <li>Provide application questions for personal reflection</li>
+                        <li>Prepare resources for both teachers and students</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.preview-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.preview-content {
+    min-height: 60px;
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+.preview-section {
+    margin-bottom: 15px;
+}
+
+.preview-section h6 {
+    color: #495057;
+    border-bottom: 2px solid #dee2e6;
+    padding-bottom: 5px;
+}
+
+.accordion .card-header {
+    background-color: #f8f9fa;
+    padding: 0.75rem 1.25rem;
+}
+
+.accordion .btn-link {
+    color: #495057;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.accordion .btn-link:hover {
+    color: #007bff;
+}
+
+.accordion .btn-link:not(.collapsed) {
+    color: #007bff;
+}
+
+.form-group .custom-file-label::after {
+    content: "Browse";
+}
+
+.badge {
+    font-weight: 500;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Difficulty level helper
+    const difficultyField = document.querySelector('#id_difficulty');
+    const difficultyHelp = document.querySelector('#difficultyHelp');
+    
+    const difficultyMessages = {
+        'beginner': '<span class="text-success"><i class="fas fa-seedling"></i> Suitable for new believers or basic topics</span>',
+        'intermediate': '<span class="text-warning"><i class="fas fa-tree"></i> For growing Christians with some Bible knowledge</span>',
+        'advanced': '<span class="text-danger"><i class="fas fa-mountain"></i> Deep theological concepts for mature believers</span>'
+    };
+    
+    if (difficultyField && difficultyHelp) {
+        difficultyField.addEventListener('change', function() {
+            difficultyHelp.innerHTML = difficultyMessages[this.value] || '';
+            updatePreviewDifficulty();
+        });
+        
+        // Initialize
+        if (difficultyField.value) {
+            difficultyHelp.innerHTML = difficultyMessages[difficultyField.value];
+        }
+    }
+    
+    // Update preview in real-time
+    const titleField = document.querySelector('#id_title');
+    const lessonNumberField = document.querySelector('#id_lesson_number');
+    const scriptureField = document.querySelector('#id_scripture_reference');
+    const durationField = document.querySelector('#id_estimated_duration');
+    const objectiveField = document.querySelector('#id_objective');
+    
+    const previewTitle = document.querySelector('#previewTitle');
+    const previewScripture = document.querySelector('#previewScripture');
+    const previewDuration = document.querySelector('#previewDuration');
+    const previewObjective = document.querySelector('#previewObjective');
+    const previewDifficulty = document.querySelector('#previewDifficulty');
+    
+    // Update title preview
+    if (titleField && previewTitle) {
+        titleField.addEventListener('input', function() {
+            const lessonNum = lessonNumberField ? lessonNumberField.value || '1' : '1';
+            previewTitle.textContent = `Lesson ${lessonNum}: ${this.value || 'Lesson Title'}`;
+        });
+    }
+    
+    // Update lesson number preview
+    if (lessonNumberField && previewTitle) {
+        lessonNumberField.addEventListener('input', function() {
+            const title = titleField ? titleField.value || 'Lesson Title' : 'Lesson Title';
+            previewTitle.textContent = `Lesson ${this.value || '1'}: ${title}`;
+        });
+    }
+    
+    // Update scripture preview
+    if (scriptureField && previewScripture) {
+        scriptureField.addEventListener('input', function() {
+            previewScripture.textContent = this.value || 'Scripture Reference';
+        });
+    }
+    
+    // Update duration preview
+    if (durationField && previewDuration) {
+        durationField.addEventListener('input', function() {
+            const duration = this.value || '60';
+            previewDuration.textContent = `${duration} minutes`;
+        });
+    }
+    
+    // Update objective preview
+    if (objectiveField && previewObjective) {
+        objectiveField.addEventListener('input', function() {
+            if (this.value) {
+                previewObjective.innerHTML = this.value.replace(/\n/g, '<br>');
+            } else {
+                previewObjective.innerHTML = '<p class="text-muted">Learning objective will appear here...</p>';
+            }
+        });
+    }
+    
+    // Update difficulty preview
+    function updatePreviewDifficulty() {
+        if (!difficultyField || !previewDifficulty) return;
+        
+        const difficulty = difficultyField.value || 'beginner';
+        const difficultyClasses = {
+            'beginner': 'bg-success',
+            'intermediate': 'bg-warning',
+            'advanced': 'bg-danger'
+        };
+        
+        previewDifficulty.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+        previewDifficulty.className = `badge ${difficultyClasses[difficulty] || 'bg-info'} ms-2`;
+    }
+    
+    updatePreviewDifficulty();
+    
+    // Lesson number validation
+    const totalLessons = {{ curriculum.total_lessons|default:1 }};
+    if (lessonNumberField) {
+        lessonNumberField.addEventListener('change', function() {
+            const lessonNum = parseInt(this.value);
+            if (lessonNum > totalLessons) {
+                alert(`Lesson number cannot exceed total lessons in curriculum (${totalLessons})`);
+                this.value = totalLessons;
+            } else if (lessonNum < 1) {
+                alert('Lesson number must be at least 1');
+                this.value = 1;
+            }
+        });
+    }
+    
+    // Scheduled date validation
+    const scheduledDateField = document.querySelector('#id_scheduled_date');
+    if (scheduledDateField) {
+        // Set min date to today
+        const today = new Date().toISOString().split('T')[0];
+        scheduledDateField.min = today;
+    }
+    
+    // Add help button
+    const helpButton = document.createElement('button');
+    helpButton.type = 'button';
+    helpButton.className = 'btn btn-outline-info btn-sm float-end';
+    helpButton.innerHTML = '<i class="fas fa-question-circle"></i> Help Guide';
+    helpButton.setAttribute('data-bs-toggle', 'modal');
+    helpButton.setAttribute('data-bs-target', '#helpModal');
+    
+    const formHeader = document.querySelector('.card-header');
+    if (formHeader) {
+        formHeader.appendChild(helpButton);
+    }
+    
+    // Form submission handling
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Validate required fields
+            const title = document.querySelector('#id_title').value.trim();
+            const objective = document.querySelector('#id_objective').value.trim();
+            const scripture = document.querySelector('#id_scripture_reference').value.trim();
+            
+            if (!title || !objective || !scripture) {
+                e.preventDefault();
+                alert('Please fill in all required fields: Title, Objective, and Scripture Reference.');
+                return false;
+            }
+            
+            // Validate lesson number
+            const lessonNum = parseInt(document.querySelector('#id_lesson_number').value);
+            if (lessonNum < 1 || lessonNum > totalLessons) {
+                e.preventDefault();
+                alert(`Lesson number must be between 1 and ${totalLessons}`);
+                return false;
+            }
+            
+            // Show loading state
+            const submitButtons = this.querySelectorAll('button[type="submit"]');
+            submitButtons.forEach(button => {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+                button.disabled = true;
+                
+                // Restore button after 5 seconds
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                }, 5000);
+            });
+        });
+    }
+});
+</script>
+{% endblock %}
