@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
-<br />
+
 {% block title %}My Dashboard - Church CMS{% endblock %}
-<br />
+
 {% block content %}
 <div class="row">
   <div class="col-md-12">
@@ -82,28 +82,25 @@
       </div>
       <div class="card-body">
         {% if user_groups %}
-        <div class="list-group">
+        <div class="list-group ">
           {% for group in user_groups %}
-          <a
-            href="{% url 'groups:my_groups' %}"
-            class="list-group-item list-group-item-action"
-          >
+          <a href="{% url 'groups:my_groups' %}" class="list-group-item list-group-item-action m-2">
             <div class="d-flex w-100 justify-content-between">
-              <h6 class="mb-1">{{ group.name }}</h6>
+              <h6 class="mb-1">
+                {{ group.name }}
+                {% if group == user.get_primary_group %}
+                <span class="badge bg-light text-primary">Primary</span>
+                {% endif %}
+              </h6>
               <small>{{ group.get_group_type_display }}</small>
             </div>
-            <p class="mb-1 small text-muted">
-              {{ group.description|truncatechars:60 }}
-            </p>
+            <p class="mb-1 small text-muted">{{ group.description|truncatechars:60 }}</p>
           </a>
           {% endfor %}
         </div>
         {% else %}
-        <p class="text-muted">You are not a member of any group yet.</p>
-        <a
-          href="{% url 'groups:my_groups' %}"
-          class="btn btn-outline-primary btn-sm"
-        >
+        <p class="text-muted"><i class="fas fa-users-slash"></i> You are not a member of any group yet.</p>
+        <a href="{% url 'groups:my_groups' %}" class="btn btn-outline-primary btn-sm">
           <i class="fas fa-search"></i> Browse Groups
         </a>
         {% endif %}
@@ -115,28 +112,83 @@
   <div class="col-md-6">
     <div class="card shadow">
       <div class="card-header bg-success text-white">
-        <h5 class="mb-0">
-          <i class="fas fa-calendar-alt"></i> Upcoming Events
-        </h5>
+        <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Upcoming Events</h5>
       </div>
       <div class="card-body">
         {% if upcoming_events %}
         <div class="list-group">
           {% for event in upcoming_events %}
-          <div class="list-group-item">
-            <div class="d-flex w-100 justify-content-between">
-              <h6 class="mb-1">{{ event.title }}</h6>
-              <small>{{ event.start_datetime|date:"M d" }}</small>
+          <a href="{% url 'events:list' %}" class="list-group-item list-group-item-action m-2">
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1">{{ event.title }}</h6>
+                <small>{{ event.start_datetime|date:"M d, H:i" }}</small>
+              </div>
+              <p class="mb-1 small">{{ event.description|truncatechars:80 }}</p>
+              <small class="text-muted"><i class="fas fa-map-marker-alt"></i> {{ event.location }}</small>
             </div>
-            <p class="mb-1 small">{{ event.description|truncatechars:80 }}</p>
-            <small class="text-muted">
-              <i class="fas fa-map-marker-alt"></i> {{ event.location }}
-            </small>
-          </div>
+          </a>
           {% endfor %}
         </div>
         {% else %}
-        <p class="text-muted">No upcoming events.</p>
+        <p class="text-muted"><i class="fas fa-calendar-times"></i> No upcoming events.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-4">
+  <!-- Announcements -->
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header bg-warning text-white">
+        <h5 class="mb-0"><i class="fas fa-bullhorn"></i> Recent Announcements</h5>
+      </div>
+      <div class="card-body">
+        {% if recent_announcements %}
+        <div class="list-group">
+          {% for announcement in recent_announcements %}
+          <a href="{% url 'announcements:list' %}" class="list-group-item list-group-item-action m-2">
+            <div class="list-group-item d-flex justify-content-between align-items-center ">
+              <div>
+                <h6>{{ announcement.title }}</h6>
+                <p class="mb-0 small text-muted">{{ announcement.content|truncatechars:80 }}</p>
+              </div>
+              <span class="badge bg-{{ announcement.priority_color }}">
+                {{ announcement.get_priority_display }}
+              </span>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted"><i class="fas fa-bullhorn-slash"></i> No announcements at the moment.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Curriculum Progress -->
+  <div class="col-md-6">
+    <div class="card shadow">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-book"></i> My Curriculum Progress</h5>
+      </div>
+      <div class="card-body">
+        {% if curriculum_progress %}
+        <ul class="list-group">
+          {% for progress in curriculum_progress %}
+          <a href="{% url 'curriculum:dashboard' %}" class="list-group-item list-group-item-action m-2">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              {{ progress.curriculum.title }}
+              <span class="badge bg-success">{{ progress.completion_percentage }}%</span>
+            </li>
+        </a>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-muted"><i class="fas fa-book-reader"></i> You are not enrolled in any curriculum yet.</p>
         {% endif %}
       </div>
     </div>
@@ -153,36 +205,24 @@
       <div class="card-body">
         <div class="row">
           <div class="col-md-3 mb-2">
-            <a
-              href="{% url 'accounts:profile' %}"
-              class="btn btn-outline-primary btn-block"
-            >
+            <a href="{% url 'accounts:profile' %}" class="btn btn-outline-primary btn-block">
               <i class="fas fa-user"></i> My Profile
             </a>
           </div>
           <div class="col-md-3 mb-2">
-            <a
-              href="{% url 'groups:list' %}"
-              class="btn btn-outline-success btn-block"
-            >
+            <a href="{% url 'groups:list' %}" class="btn btn-outline-success btn-block">
               <i class="fas fa-users"></i> Browse Groups
             </a>
           </div>
           <div class="col-md-3 mb-2">
-            <a
-              href="{% url 'accounts:password_change' %}"
-              class="btn btn-outline-warning btn-block"
-            >
+            <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-warning btn-block">
               <i class="fas fa-key"></i> Change Password
             </a>
           </div>
           <div class="col-md-3 mb-2">
             <form method="post" action="{% url 'accounts:logout' %}">
               {% csrf_token %}
-              <button
-                type="submit"
-                class="btn btn-outline-danger btn-block w-100"
-              >
+              <button type="submit" class="btn btn-outline-danger btn-block w-100">
                 <i class="fas fa-sign-out-alt"></i> Logout
               </button>
             </form>

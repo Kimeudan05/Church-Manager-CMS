@@ -137,11 +137,18 @@ class ProfileUpdateForm(forms.ModelForm):
             "marital_status",
             "emergency_contact",  # Add the name
             "emergency_contact_phone",
+            "baptism_date",
         )
         widgets = {
-            "first_name": forms.TextInput(attrs={"class": "form-control"}),
-            "last_name": forms.TextInput(attrs={"class": "form-control"}),
-            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "first_name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "first name"}
+            ),
+            "last_name": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "last name"}
+            ),
+            "email": forms.EmailInput(
+                attrs={"class": "form-control", "placeholder": "email address"}
+            ),
             "phone": forms.TextInput(
                 attrs={
                     "class": "form-control",
@@ -158,6 +165,9 @@ class ProfileUpdateForm(forms.ModelForm):
             ),
             "occupation": forms.TextInput(attrs={"class": "form-control"}),
             "marital_status": forms.Select(attrs={"class": "form-control"}),
+            "baptism_date": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}, format="%Y-%m-%d"
+            ),
             "profile_picture": forms.FileInput(attrs={"class": "form-control"}),
             "emergency_contact": forms.TextInput(
                 attrs={
@@ -193,8 +203,8 @@ class ProfileUpdateForm(forms.ModelForm):
         if not 10 <= len(phone) <= 12:
             raise forms.ValidationError("Phone number must be 10-12 digits long.")
 
-        # Ensure uniqueness
-        if CustomUser.objects.filter(phone=phone).exists():
+        # Ensure uniqueness excluding the current user
+        if CustomUser.objects.filter(phone=phone).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError("A user with this phone number already exists.")
 
         return phone

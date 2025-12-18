@@ -97,10 +97,8 @@ class CustomPasswordChangeView(
     """Custom password change view"""
 
     template_name = "accounts/password_change.html"
-    success_url = reverse_lazy("accounts:password_reset_done")
-    success_message = (
-        "Password reset email has been sent if the email exists in our system."
-    )
+    success_url = reverse_lazy("accounts:password_change_done")
+    success_message = "Your password has been changed successfully."
 
 
 class CustomPasswordResetView(SuccessMessageMixin, PasswordResetView):
@@ -108,6 +106,8 @@ class CustomPasswordResetView(SuccessMessageMixin, PasswordResetView):
 
     template_name = "accounts/password_reset.html"
     email_template_name = "accounts/password_reset_email.html"
+    # subject_template_name = "accounts/password_reset_subject.txt"  # optional
+    html_email_template_name = "accounts/password_reset_email.html"  # <-- ensures HTML
     success_url = reverse_lazy("accounts:password_reset_done")
     success_message = (
         "Password reset email has been send if the email exists in our system."

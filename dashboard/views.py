@@ -3,8 +3,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 from django.utils import timezone
 from datetime import timedelta
+from django.db.models import Q
 
+from announcements.models import Announcement
 from core.mixins import AdminRequiredMixin
+from curriculum.models import CurriculumProgress
 from events.models import Event
 
 
@@ -17,17 +20,37 @@ class MemberDashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Add user's groups
-        context["user_groups"] = user.groups.all() if hasattr(user, "groups") else []
-        # Get upcoming events (placeholder - will be implemented in events app)
-        # from events.models import Event
-        # context['upcoming_events'] = Event.objects.filter(
-        #     start_datetime__gte=timezone.now()
-        # ).order_by('start_datetime')[:5]
+        # 1️⃣ User's groups
+        user_groups = ChurchGroup.objects.filter(group_members__member=user)
+        context["user_groups"] = user_groups
 
-        # placeholder data
-        context["upcoming_events"] = []
-        context["recent_announcements"] = []
+        # 2️⃣ Upcoming events visible to this member
+        now = timezone.now()
+        upcoming_events = [
+            event
+            for event in Event.objects.filter(start_datetime__gte=now)[:20]
+            if event.is_visible_to(user)
+        ]
+        context["upcoming_events"] = upcoming_events[:5]  # show max 5
+
+        # 3️⃣ Relevant announcements
+        announcements = (
+            Announcement.objects.filter(is_published=True, publish_at__lte=now)
+            .filter(
+                Q(is_church_wide=True)
+                | Q(target_groups__in=user_groups)
+                | Q(target_members=user)
+            )
+            .distinct()
+            .order_by("-publish_at")[:5]
+        )
+        context["recent_announcements"] = announcements
+
+        # 4️⃣ Curriculum progress for this member
+        curriculum_progress = CurriculumProgress.objects.filter(member=user)
+        context["curriculum_progress"] = curriculum_progress
+
+        # 5️⃣ User info
         context["user"] = user
 
         return context

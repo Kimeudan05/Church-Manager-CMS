@@ -181,19 +181,19 @@
           </div>
           <div class="col-md-2 mb-2">
             <a
-              href="{% url 'admin:groups_churchgroup_add' %}"
+              href="{% url 'groups:create' %}"
               class="btn btn-outline-info btn-block"
             >
               <i class="fas fa-layer-group"></i> Add Group
             </a>
           </div>
           <div class="col-md-2 mb-2">
-            <a href="#" class="btn btn-outline-warning btn-block">
+            <a href="{% url 'events:create' %}" class="btn btn-outline-warning btn-block">
               <i class="fas fa-calendar-plus"></i> Create Event
             </a>
           </div>
           <div class="col-md-2 mb-2">
-            <a href="#" class="btn btn-outline-secondary btn-block">
+            <a href="{% url 'announcements:create' %}" class="btn btn-outline-secondary btn-block">
               <i class="fas fa-bullhorn"></i> Send Announcement
             </a>
           </div>
